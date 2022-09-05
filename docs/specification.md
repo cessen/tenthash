@@ -19,7 +19,7 @@ fn do_hash(input_data):
         mix hash_state for 6 rounds
 
     # Finalize.
-    xor input_data length in bits into hash_state[0]
+    xor input_data length in bits into hash_state
     mix hash_state for 12 rounds
 
     return first 160 bits of hash_state
@@ -40,11 +40,11 @@ The internal hash state consists of four 64-bit unsigned integers, short-hand la
 - `D` = `0xf5d94991b6b9b944`
 
 
-### Xoring input data.
+### Xoring the input data.
 
-Input data is processed in 256-bit chunks.  If the last chunk is less than 256 bits, its end is padded out to 256 bits with zeros, and it is then processed as normal.
+Input data is processed in 256-bit chunks.  **If the last chunk is less than 256 bits,** it is padded out to 256 bits with zeros and then processed as normal.
 
-Each chunk of data is treated as four 64-bit *little-endian* integers (i.e. on big-endian platforms the byte order within each 64-bit sub-chunk must be reversed) and is xored into the hash state as follows:
+Each chunk of data is treated as four 64-bit *little-endian* unsigned integers (i.e. on big-endian platforms the byte order within each individual 64-bit sub-chunk must be reversed) and is xored into the hash state:
 
 ```python
 A ^= chunk[bits 0-63]
@@ -54,7 +54,18 @@ D ^= chunk[bits 192-255]
 ```
 
 
-### Hash state mixing.
+### Xoring the input length.
+
+Once all input data has been processed, the length of the input data **in bits** (not bytes) is xored as an unsigned integer into the `A` component of the hash state:
+
+```python
+A ^= data_length_in_bits
+```
+
+Note: TentHash is not intended to be used with data streams longer than 2<sup>64</sup>-1 bits.  However, as a matter of specification, `data_length_in_bits` should simply wrap when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.
+
+
+### Mixing the hash state.
 
 TentHash's mixing function is parameterized by a number of rounds, and is defined as follows:
 
@@ -66,7 +77,7 @@ fn mix_hash_state(number_of_rounds):
         [11, 41], [18, 33],
     ]
 
-    for i in number_of_rounds:
+    for i in 0 to number_of_rounds:
         A += C
         B += D
         C = (C <<< constants[i % 6][0]) ^ A
@@ -74,34 +85,21 @@ fn mix_hash_state(number_of_rounds):
         swap(C, D)
 ```
 
-Where `<<<` is a bit-wise left rotation.
+Where `<<<` is a bit-wise left rotation, and the loop's 0-to-`number_of_rounds` range is exclusive of `number_of_rounds`.
 
-Immediately following the xoring of each input chunk (as described in the previous section), the hash state is mixed for 6 rounds.
-
-
-### Finalization.
-
-Once all input data has been processed, the length of the input data **in bits** (not bytes) is xored as an unsigned integer into the hash state:
-
-```python
-A ^= data_length_in_bits
-```
-
-(Note: TentHash is not intended to be used with data streams longer than 2^64-1 bits.  However, as a matter of specification: `data_length_in_bits` should simply wrap when exceeding 2^64-1.)
-
-And then the hash state is mixed one last time, but for 12 rounds instead of 6.
+As shown in the overview at the beginning of this document, the hash state is mixed for 6 rounds after xoring each input chunk and for 12 rounds after xoring the input length.
 
 
-### The digest.
+### Producing the digest.
 
 The output digest is simply the first 160 bits of the hash state.  It should be returned as an array of 20 bytes, with the least significant byte of `A` being at index 0, and proceeding in order from there.  This means only four bytes of `C` are included and no bytes of `D`.
 
-TentHash does not mandate a particular string representation of the digest.  But if a printable digest is desired then by convention it follows the same procedure as most hashes: the bytes of the digest are each printed as their unsigned numerical hex value, starting from the byte at index 0.
+TentHash does not mandate a particular printable string representation of the digest.  But if a printable digest is desired then by convention it follows the same procedure as most hashes: the bytes of the digest are each printed as their unsigned numerical hex value, starting from the byte at index 0.
 
 For example, a digest of `[10, 212, 156, ...]` would be printed as `0ad49c...`.
 
 
-### Example digests / test vectors.
+## Example Digests / Test Vectors
 
 - Empty (no input data):
     - `e0d4e0a2608a8741e349fa1ea0263fedbd65f66d`
