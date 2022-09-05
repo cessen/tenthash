@@ -18,7 +18,7 @@ TentHash aims to fill a gap I encountered when searching for a hash to use in a 
 
 This led to the following priorities, in order of importance:
 
-1. **Strong collision resistence.**  For all practical purposes, it should be safe to assume that different pieces of (legitimate) data will never have colliding hashes.
+1. **Strong collision resistance.**  For all practical purposes, it should be safe to assume that different pieces of (legitimate) data will never have colliding hashes.
 2. **Simplicity.**  It shouldn't require diagrams to understand, and it should be straightforward to write conforming implementations for just about any platform.  It should also be *easy to audit* for (non-security) weaknesses.
 3. **Reasonably fast.**  It doesn't need to be break-neck fast, but it should be able to process 20 GB+ files in seconds, not minutes, without resorting to multi-threading.
 
@@ -31,7 +31,7 @@ So I set to work creating TentHash.
 
 ## What qualifies you to create a hash function?
 
-Honestly?  Nothing in particular.  I do have experience working with hash-like constructions for some [unusual](https://psychopath.io/post/2021_01_30_building_a_better_lk_hash) [purposes](https://psychopath.io/post/2022_08_14_a_fast_hash_for_base_4_owen_scrambling), which has given me an appreciation for the subtley of bit mixing.
+Honestly?  Nothing in particular.  I do have experience working with hash-like constructions for some [unusual](https://psychopath.io/post/2021_01_30_building_a_better_lk_hash) [purposes](https://psychopath.io/post/2022_08_14_a_fast_hash_for_base_4_owen_scrambling), which has given me an appreciation for the subtlety of bit mixing.
 
 But more importantly, my hope is that by keeping this hash simple it will be easy for others to evaluate on their own, rather than just trusting that I know what I'm doing.
 
