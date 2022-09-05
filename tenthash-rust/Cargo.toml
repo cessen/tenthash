@@ -2,11 +2,11 @@
 name = "tenthash"
 version = "0.1.0"
 edition = "2021"
-description = "A strong, simple, non-cryptographic 160-bit hash function."
+description = "A strong 160-bit non-cryptographic hash function."
 categories = ["algorithms", "no-std"]
 keywords = ["hash", "checksum"]
 documentation = "https://docs.rs/tenthash"
-repository = "https://github.com/cessen/tenthash"
+repository = "https://github.com/cessen/tenthash/tenthash-rust"
 readme = "README.md"
 authors = ["Nathan Vegdahl <cessen@cessen.com>"]
 license = "MIT OR Apache-2.0"
