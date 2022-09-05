@@ -21,7 +21,7 @@
 //! but has only been tested on little endian platforms so far.
 //! Running the test suite on a big-endian platform can verify.
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
@@ -80,7 +80,7 @@ impl TentHash {
         }
     }
 
-    /// Finalizes the hash and returnd the digest.
+    /// Finalizes the hash and returns the digest.
     pub fn finalize(mut self) -> [u8; DIGEST_SIZE] {
         // Hash the remaining bytes if there are any.
         if self.buf_length > 0 {
@@ -140,134 +140,5 @@ fn mix_state(state: &mut [u64; 4], rounds: usize) {
         state[3] = state[3].rotate_left(rot[1]) ^ state[1];
 
         state.swap(2, 3);
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    fn hash(data: &[u8]) -> [u8; DIGEST_SIZE] {
-        let mut h = TentHash::new();
-        h.update(data);
-        h.finalize()
-    }
-
-    /// Returns the printable hex string version of a digest.
-    pub fn digest_to_string(digest: &[u8]) -> String {
-        fn low_bits_to_char(n: u8) -> char {
-            match n {
-                0 => '0',
-                1 => '1',
-                2 => '2',
-                3 => '3',
-                4 => '4',
-                5 => '5',
-                6 => '6',
-                7 => '7',
-                8 => '8',
-                9 => '9',
-                10 => 'a',
-                11 => 'b',
-                12 => 'c',
-                13 => 'd',
-                14 => 'e',
-                15 => 'f',
-                _ => unreachable!(),
-            }
-        }
-
-        let mut s = String::new();
-        for byte in digest.iter() {
-            s.push(low_bits_to_char(byte >> 4u8));
-            s.push(low_bits_to_char(byte & 0b00001111));
-        }
-        s
-    }
-
-    #[test]
-    fn hash_empty() {
-        let correct_digest = "e0d4e0a2608a8741e349fa1ea0263fedbd65f66d";
-        assert_eq!(digest_to_string(&hash(&[])), correct_digest);
-    }
-
-    #[test]
-    fn hash_zero() {
-        let correct_digest = "6e5f483d20443bb6e70c300b0a5aa64ce36d3467";
-        assert_eq!(digest_to_string(&hash(&[0u8])), correct_digest);
-    }
-
-    #[test]
-    fn hash_string_01() {
-        let s = "0123456789";
-        let correct_digest = "f12f795967313e9a0e822edaa307c3d7b7d19ce3";
-        assert_eq!(digest_to_string(&hash(s.as_bytes())), correct_digest);
-    }
-
-    #[test]
-    fn hash_string_02() {
-        let s = "abcdefghijklmnopqrstuvwxyz";
-        let correct_digest = "8f578c05439217eeac0dc46d7df2805f91ffad99";
-        assert_eq!(digest_to_string(&hash(s.as_bytes())), correct_digest);
-    }
-
-    #[test]
-    fn hash_string_03() {
-        let s = "The quick brown fox jumps over the lazy dog.";
-        let correct_digest = "0be19c6dc03f6800743e41c70f0ee0c2d75bad67";
-        assert_eq!(digest_to_string(&hash(s.as_bytes())), correct_digest);
-    }
-
-    #[test]
-    fn hash_string_04() {
-        let s = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-        let correct_digest = "6faf47daac8a767a1d7ed6da36cbe50616a1b83a";
-        assert_eq!(digest_to_string(&hash(s.as_bytes())), correct_digest);
-    }
-
-    #[test]
-    fn hash_multi_part_processing() {
-        let test_string1 =
-            "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor";
-        let test_string2 = " incididunt ut l";
-        let test_string3 = "abore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat ";
-        let test_string4 = "cup";
-        let test_string5 =
-            "idatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-        let correct_digest = "6faf47daac8a767a1d7ed6da36cbe50616a1b83a";
-
-        let mut hasher = TentHash::new();
-        hasher.update(test_string1.as_bytes());
-        hasher.update(test_string2.as_bytes());
-        hasher.update(test_string3.as_bytes());
-        hasher.update(test_string4.as_bytes());
-        hasher.update(test_string5.as_bytes());
-        let digest = hasher.finalize();
-
-        assert_eq!(digest_to_string(&digest), correct_digest);
-    }
-
-    #[test]
-    fn hash_length() {
-        // We're testing here to make sure the length of the data properly
-        // affects the hash.  Internally in the hash, the last block of data
-        // is padded with zeros, so here we're forcing that last block to be
-        // all zeros, and only changing the length of input.
-        let len_0 = &[];
-        let len_1 = &[0u8];
-        let len_2 = &[0u8, 0];
-
-        assert_eq!(
-            digest_to_string(&hash(len_0)),
-            "e0d4e0a2608a8741e349fa1ea0263fedbd65f66d",
-        );
-        assert_eq!(
-            digest_to_string(&hash(len_1)),
-            "6e5f483d20443bb6e70c300b0a5aa64ce36d3467",
-        );
-        assert_eq!(
-            digest_to_string(&hash(len_2)),
-            "ffaf1c6954edb55a7ac10c16b6f309c8e1cc7b5c",
-        );
     }
 }

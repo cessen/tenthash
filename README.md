@@ -1,4 +1,4 @@
-# TentHash
+# TentHash v0.1
 
 [![Latest Release][crates-io-badge]][crates-io-url]
 [![Documentation][docs-rs-img]][docs-rs-url]

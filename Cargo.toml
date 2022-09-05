@@ -1,5 +1,5 @@
 [package]
-name = "TentHash"
+name = "tenthash"
 version = "0.1.0"
 edition = "2021"
 description = "A strong, simple, non-cryptographic 160-bit hash function."
@@ -12,3 +12,10 @@ authors = ["Nathan Vegdahl <cessen@cessen.com>"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+
+[dev-dependencies]
+criterion = "0.3.6"
+
+[[bench]]
+name = "hash"
+harness = false
