@@ -1,15 +1,15 @@
 # TentHash Specification v0.1
 
-This document defines the TentHash hash function.  It aims to be concise and easy to follow for anyone writing implementations of TentHash.  It does *not* explain the rationale behind the hash design.  For that, please see the [Design Rationale document](design_rationale.md).
+This document defines the TentHash hash function.  It aims to be concise and easy to follow for anyone writing an implementation of TentHash.  It does *not* explain the rationale behind TentHash's design.  For that, please see the [Design Rationale document](design_rationale.md).
 
 **WARNING:** this specification may change in backwards-incompatible ways prior to version 1.0.  After 1.0 is declared, only changes that do not alter the hash output (such as clarifications and better prose) will be made.  There will never be a 2.0.
 
 
 ## Overview
 
-TentHash follows a simple xor-and-mix approach to hashing input data.  The general hashing procedure looks like this:
+This is the general hashing procedure:
 
-```python
+```sh
 fn do_hash(input_data):
     hash_state = [A, B, C, D]
 
@@ -44,9 +44,9 @@ The internal hash state consists of four 64-bit unsigned integers, short-hand la
 
 Input data is processed in 256-bit chunks.  **If the last chunk is less than 256 bits,** it is padded out to 256 bits with zeros and then processed as normal.
 
-Each chunk of data is treated as four 64-bit *little-endian* unsigned integers (i.e. on big-endian platforms the byte order within each individual 64-bit sub-chunk must be reversed) and is xored into the hash state:
+Each chunk of data is treated as four 64-bit *little-endian* unsigned integers (i.e. on big-endian platforms the byte order within each individual 64-bit sub-chunk must be reversed) and is xored into the hash state as follows:
 
-```python
+```sh
 A ^= chunk[bits 0-63]
 B ^= chunk[bits 64-127]
 C ^= chunk[bits 128-191]
@@ -58,18 +58,18 @@ D ^= chunk[bits 192-255]
 
 Once all input data has been processed, the length of the input data **in bits** (not bytes) is xored as an unsigned integer into the `A` component of the hash state:
 
-```python
+```sh
 A ^= data_length_in_bits
 ```
 
-Note: TentHash is not intended to be used with data streams longer than 2<sup>64</sup>-1 bits.  However, as a matter of specification, `data_length_in_bits` should simply wrap when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.
+(Note: TentHash is not intended to be used with data streams longer than 2<sup>64</sup>-1 bits.  However, as a matter of specification, `data_length_in_bits` should simply wrap when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.)
 
 
 ### Mixing the hash state.
 
-TentHash's mixing function is parameterized by a number of rounds, and is defined as follows:
+The mixing function is parameterized by a number of rounds, and is defined as follows:
 
-```python
+```sh
 fn mix_hash_state(number_of_rounds):
     constants = [
         [31, 25], [5, 48],
