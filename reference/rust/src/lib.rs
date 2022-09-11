@@ -1,5 +1,6 @@
 /// TentHash reference implementation in Rust.
 
+const BLOCK_SIZE: usize = 256 / 8; // Block size, in bytes.
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 
 pub fn hash(input_data: &[u8]) -> [u8; DIGEST_SIZE] {
@@ -11,10 +12,10 @@ pub fn hash(input_data: &[u8]) -> [u8; DIGEST_SIZE] {
     ];
 
     // Process the input data.
-    for chunk in input_data.chunks(32) {
+    for chunk in input_data.chunks(BLOCK_SIZE) {
         // Copy the chunk into a zeroed-out buffer.  When the chunk is
         // smaller than 256 bits this pads it out to 256 bits with zeros.
-        let mut buffer = [0u8; 32];
+        let mut buffer = [0u8; BLOCK_SIZE];
         (&mut buffer[..chunk.len()]).copy_from_slice(chunk);
 
         // Xor the chunk/buffer into the hash state.
