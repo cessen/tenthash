@@ -10,9 +10,9 @@
 
 #define TENT_BLOCK_SIZE (256 / 8)
 #define TENT_DIGEST_SIZE (160 / 8)
-#define ROTATE_L64(x, n) ((x << n) | (x >> (64 - n)))
+#define ROTL_64(x, n) ((x << n) | (x >> (64 - n)))
 
-void mix_state(uint64_t *, int);
+void mix_state(uint64_t *);
 
 typedef struct {
     uint8_t bytes[TENT_DIGEST_SIZE];
@@ -23,10 +23,10 @@ Digest hash(const void *in_data, uint64_t data_len) {
     uint8_t *data = (uint8_t *)in_data;
 
     uint64_t state[4] = {
-        0xe2b8d3b67882709f,
-        0x045e21ec46bcea22,
-        0x51ea37fa96fbae67,
-        0xf5d94991b6b9b944,
+        0x5d6daffc4411a967,
+        0xe22d4dea68577f34,
+        0xca50864d814cbc2e,
+        0x894e29b9611eb173,
     };
 
     // Process the input data in 256-bit chunks.
@@ -38,13 +38,13 @@ Digest hash(const void *in_data, uint64_t data_len) {
         uint8_t buffer[TENT_BLOCK_SIZE] = {0};
         memcpy(buffer, data, chunk_size);
 
-        // Xor the chunk/buffer into the hash state.
-        state[0] ^= *((uint64_t *)buffer);
-        state[1] ^= *((uint64_t *)(buffer + 8));
-        state[2] ^= *((uint64_t *)(buffer + 16));
-        state[3] ^= *((uint64_t *)(buffer + 24));
+        // Add the chunk/buffer into the hash state.
+        state[0] += *((uint64_t *)buffer);
+        state[1] += *((uint64_t *)(buffer + 8));
+        state[2] += *((uint64_t *)(buffer + 16));
+        state[3] += *((uint64_t *)(buffer + 24));
 
-        mix_state(state, 6);
+        mix_state(state);
 
         data += chunk_size;
         data_len -= chunk_size;
@@ -52,31 +52,33 @@ Digest hash(const void *in_data, uint64_t data_len) {
 
     // Finalize.
     state[0] ^= data_len_bits;
-    mix_state(state, 12);
+    mix_state(state);
+    mix_state(state);
 
-    // Convert the hash state into a 160-bit digest.
+    // Convert the hash state into a digest.
     Digest digest;
     memcpy(digest.bytes, ((uint8_t*)state), TENT_DIGEST_SIZE);
 
     return digest;
 }
 
-void mix_state(uint64_t *state, int rounds) {
+void mix_state(uint64_t *state) {
     // Rotation constants.
-    const static int ROTS[6][2] = {
-        {31, 25}, {5, 48}, {20, 34}, {21, 57}, {11, 41}, {18, 33},
+    const static int ROTS[7][2] = {
+        {51, 59}, {25, 19}, {8, 10}, {35, 3},
+        {45, 38}, {61, 32}, {23, 53},
     };
 
-    for (int i = 0; i < rounds; i++) {
+    for (int i = 0; i < 7; i++) {
         state[0] += state[2];
         state[1] += state[3];
-        state[2] = ROTATE_L64(state[2], ROTS[i % 6][0]) ^ state[0];
-        state[3] = ROTATE_L64(state[3], ROTS[i % 6][1]) ^ state[1];
+        state[2] = ROTL_64(state[2], ROTS[i][0]) ^ state[0];
+        state[3] = ROTL_64(state[3], ROTS[i][1]) ^ state[1];
 
-        // Swap elements 2 and 3.
-        uint64_t tmp = state[2];
-        state[2] = state[3];
-        state[3] = tmp;
+        // Swap.
+        const uint64_t tmp = state[0];
+        state[0] = state[1];
+        state[1] = tmp;
     }
 }
 

@@ -1,8 +1,8 @@
 [package]
 name = "tenthash"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "A strong 160-bit non-cryptographic hash function."
+description = "A robust 160-bit non-cryptographic hash function."
 categories = ["algorithms", "no-std"]
 keywords = ["hash", "checksum"]
 documentation = "https://docs.rs/tenthash"

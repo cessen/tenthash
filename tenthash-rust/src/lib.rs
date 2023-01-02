@@ -1,21 +1,18 @@
-//! TentHash is a strong 160-bit *non-cryptographic* hash function.
+//! TentHash is a robust 160-bit *non-cryptographic* hash function.
 //!
 //! **WARNING:** TentHash's design is not yet finalized, and digest
-//! results may change before 1.0 is declared.  Please do not rely on
-//! this (yet) for persistent, long-term checksums.
+//! results may change before 1.0 is declared.
 //!
 //! TentHash is intended to be used as a reasonably fast but (more
 //! importantly) high-quality checksum for data identification.
-//! Moreover, it has a simple portable design that is easy to audit,
-//! doesn't require special hardware instructions, and is easy to write
-//! conforming independent implementations of.
+//! Moreover, it has a simple design that is easy to understand and
+//! straightforward to write conforming implementations of.
 //!
-//! TentHash is explicitly *not* intended to stand up to attacks.  In
-//! fact, attacks are *quite easy* to mount against it.  Its otherwise
-//! strong collision resistance is only meaningful under non-adversarial
-//! conditions.  In other words, like a good tent, it will protect you
-//! from the elements, but will do very little to protect you from
-//! attackers.
+//! TentHash is explicitly *not* intended to stand up to attacks.  Its
+//! otherwise strong collision resistance is only meaningful under
+//! non-adversarial conditions.  In other words, like a good tent, it
+//! will protect you from the elements, but will do very little to
+//! protect you from attackers.
 //!
 //! This implementation should work on platforms of any endianness,
 //! but has only been tested on little endian platforms so far.
@@ -25,8 +22,6 @@
 
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
-const UPDATE_MIX_ROUNDS: usize = 6; // Number of mix rounds after each block of data is added.
-const FINALIZE_MIX_ROUNDS: usize = 12; // Number of mix rounds used to finalize the hash.
 
 /// Processes input bytes and outputs a TentHash digest.
 #[derive(Debug, Copy, Clone)]
@@ -43,10 +38,10 @@ impl TentHash {
     pub fn new() -> TentHash {
         TentHash {
             state: [
-                0xe2b8d3b67882709f,
-                0x045e21ec46bcea22,
-                0x51ea37fa96fbae67,
-                0xf5d94991b6b9b944,
+                0x5d6daffc4411a967,
+                0xe22d4dea68577f34,
+                0xca50864d814cbc2e,
+                0x894e29b9611eb173,
             ],
             buf: [0; BLOCK_SIZE],
             buf_length: 0,
@@ -63,12 +58,12 @@ impl TentHash {
             if self.buf_length == 0 && data.len() >= BLOCK_SIZE {
                 // Process data directly, skipping the buffer.
                 add_data_to_state(&mut self.state, data);
-                mix_state(&mut self.state, UPDATE_MIX_ROUNDS);
+                mix_state(&mut self.state);
                 data = &data[BLOCK_SIZE..];
             } else if self.buf_length == BLOCK_SIZE {
                 // Process the filled buffer.
                 add_data_to_state(&mut self.state, &self.buf);
-                mix_state(&mut self.state, UPDATE_MIX_ROUNDS);
+                mix_state(&mut self.state);
                 self.buf_length = 0;
             } else {
                 // Fill the buffer.
@@ -86,13 +81,14 @@ impl TentHash {
         if self.buf_length > 0 {
             (&mut self.buf[self.buf_length..]).fill(0); // Pad with zeros as needed.
             add_data_to_state(&mut self.state, &self.buf);
-            mix_state(&mut self.state, UPDATE_MIX_ROUNDS);
+            mix_state(&mut self.state);
         }
 
         // Incorporate the message length (in bits) and do the
         // final mixing.
         self.state[0] ^= self.message_length * 8;
-        mix_state(&mut self.state, FINALIZE_MIX_ROUNDS);
+        mix_state(&mut self.state);
+        mix_state(&mut self.state);
 
         // Get the digest as a byte array and return it.
         let mut digest = [0u8; DIGEST_SIZE];
@@ -109,36 +105,38 @@ impl TentHash {
 /// are added.
 #[inline(always)]
 fn add_data_to_state(state: &mut [u64; 4], data: &[u8]) {
-    // Convert the data to native endian u64's and xor into the
+    // Convert the data to native endian u64's and add to the
     // hash state.
     assert!(data.len() >= BLOCK_SIZE);
-    state[0] ^= u64::from_le_bytes((&data[0..8]).try_into().unwrap());
-    state[1] ^= u64::from_le_bytes((&data[8..16]).try_into().unwrap());
-    state[2] ^= u64::from_le_bytes((&data[16..24]).try_into().unwrap());
-    state[3] ^= u64::from_le_bytes((&data[24..32]).try_into().unwrap());
+    state[0] = state[0].wrapping_add(u64::from_le_bytes((&data[0..8]).try_into().unwrap()));
+    state[1] = state[1].wrapping_add(u64::from_le_bytes((&data[8..16]).try_into().unwrap()));
+    state[2] = state[2].wrapping_add(u64::from_le_bytes((&data[16..24]).try_into().unwrap()));
+    state[3] = state[3].wrapping_add(u64::from_le_bytes((&data[24..32]).try_into().unwrap()));
 }
 
 /// Mixes the passed hash state.
 ///
-/// Inspired by Skein's MIX function and permutation approach.
-///
-/// 6 rounds is enough for an effective 160 bits of diffusion.  9 rounds
-/// is enough for full diffusion.
+/// Running this on the hash state once is enough to diffuse the bits
+/// equivalently to a full 170-bit diffusion.  Running it twice achieves
+/// full 256-bit diffusion.
 #[inline(always)]
-fn mix_state(state: &mut [u64; 4], rounds: usize) {
-    // Rotation constants.  These have been optimized to maximize the
-    // minimum diffusion at 6 rounds of mixing.
-    const ROTATIONS: &[[u32; 2]] = &[[31, 25], [5, 48], [20, 34], [21, 57], [11, 41], [18, 33]];
+fn mix_state(state: &mut [u64; 4]) {
+    const ROTATIONS: &[[u32; 2]] = &[
+        [51, 59],
+        [25, 19],
+        [8, 10],
+        [35, 3],
+        [45, 38],
+        [61, 32],
+        [23, 53],
+    ];
 
-    for round in 0..rounds {
-        let rot = ROTATIONS[round % ROTATIONS.len()];
-
-        // MIX function.
+    for rot_pair in ROTATIONS.iter() {
         state[0] = state[0].wrapping_add(state[2]);
-        state[2] = state[2].rotate_left(rot[0]) ^ state[0];
         state[1] = state[1].wrapping_add(state[3]);
-        state[3] = state[3].rotate_left(rot[1]) ^ state[1];
+        state[2] = state[2].rotate_left(rot_pair[0]) ^ state[0];
+        state[3] = state[3].rotate_left(rot_pair[1]) ^ state[1];
 
-        state.swap(2, 3);
+        state.swap(0, 1);
     }
 }

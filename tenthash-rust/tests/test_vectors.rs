@@ -1,15 +1,14 @@
 use tenthash::TentHash;
 
 const TEST_VECTORS: &[(&[u8], &str)] = &[
-    (&[], "e0d4e0a2608a8741e349fa1ea0263fedbd65f66d"),
-    (&[0], "6e5f483d20443bb6e70c300b0a5aa64ce36d3467"),
-    (&[0, 0], "ffaf1c6954edb55a7ac10c16b6f309c8e1cc7b5c"),
-    (b"0123456789", "f12f795967313e9a0e822edaa307c3d7b7d19ce3"),
-    (b"abcdefghijklmnopqrstuvwxyz", "8f578c05439217eeac0dc46d7df2805f91ffad99"),
-    (b"The quick brown fox jumps over the lazy dog.", "0be19c6dc03f6800743e41c70f0ee0c2d75bad67"),
+    (&[], "5206df9490caa9093ad61971a0fcb2aa6115d542"),
+    (&[0], "b9769af5a7f421c0bbbe1063ea695d8e13e6a16d"),
+    (b"0123456789", "6a513203d85d60e64ce3d171a28098a496f01225"),
+    (b"abcdefghijklmnopqrstuvwxyz", "0ff9f1c49a264acea36739d91f9ac044d58f5d64"),
+    (b"The quick brown fox jumps over the lazy dog.", "a7e5568ce1cb6d5933f2f7654f69f309b36dacac"),
     (
         b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-        "6faf47daac8a767a1d7ed6da36cbe50616a1b83a",
+        "790921eb9882670157681d310277b2322fef8022",
     ),
 ];
 

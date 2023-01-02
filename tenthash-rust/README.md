@@ -3,9 +3,9 @@
 [![Latest Release][crates-io-badge]][crates-io-url]
 [![Documentation][docs-rs-img]][docs-rs-url]
 
-Rust implementation of TentHash, a strong 160-bit *non-cryptographic* hash function.
+Rust implementation of TentHash, a robust 160-bit *non-cryptographic* hash function.
 
-**WARNING:** TentHash's design is not yet finalized, and digest results may change before the spec is declared 1.0.  Please do not rely on this (yet) for persistent, long-term checksums.
+**WARNING:** TentHash's design is not yet finalized, and digest results may change before the spec is declared 1.0.
 
 ## License
 
