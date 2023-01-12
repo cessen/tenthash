@@ -1,4 +1,4 @@
-use tenthash::TentHash;
+use tenthash::TentHasher;
 
 const TEST_VECTORS: &[(&[u8], &str)] = &[
     (&[], "5206df9490caa9093ad61971a0fcb2aa6115d542"),
@@ -47,7 +47,7 @@ pub fn digest_to_string(digest: &[u8]) -> String {
 #[test]
 fn one_chunk() {
     for (data, digest) in TEST_VECTORS.iter().copied() {
-        let mut hasher = TentHash::new();
+        let mut hasher = TentHasher::new();
         hasher.update(data);
         assert_eq!(digest_to_string(&hasher.finalize()), digest);
     }
@@ -58,7 +58,7 @@ fn multi_chunk() {
     for chunk_size in 1..260 {
         for (data, digest) in TEST_VECTORS.iter().copied() {
             if data.len() >= chunk_size {
-                let mut hasher = TentHash::new();
+                let mut hasher = TentHasher::new();
                 for chunk in data.chunks(chunk_size) {
                     hasher.update(chunk);
                 }

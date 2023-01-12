@@ -1,4 +1,4 @@
-//! TentHash is a robust 160-bit *non-cryptographic* hash function.
+//! TentHash is a robust 160-bit non-cryptographic hash function.
 //!
 //! **WARNING:** TentHash's design is not yet finalized, and digest
 //! results may change before 1.0 is declared.
@@ -17,26 +17,37 @@
 //! This implementation should work on platforms of any endianness,
 //! but has only been tested on little endian platforms so far.
 //! Running the test suite on a big-endian platform can verify.
+//!
+//! # Example
+//!
+//! ```rust
+//! # use tenthash::TentHasher;
+//! let mut hasher = TentHasher::new();
+//! hasher.update("Hello world!");
+//! let hash = hasher.finalize();
+//!
+//! assert_eq!(&hash[..4], &[0x19, 0x29, 0x33, 0xfe]);
+//! ```
 
 #![no_std]
 
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
 
-/// Processes input bytes and outputs a TentHash digest.
+/// The TentHash hasher.  Processes input bytes and outputs a TentHash digest.
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 #[repr(align(32))]
-pub struct TentHash {
+pub struct TentHasher {
     state: [u64; 4],       // Hash state.
     buf: [u8; BLOCK_SIZE], // Accumulates message data for processing when needed.
     buf_length: usize,     // The number of message bytes currently stored in buf[].
     message_length: u64,   // Accumulates the total message length, in bytes.
 }
 
-impl TentHash {
-    pub fn new() -> TentHash {
-        TentHash {
+impl TentHasher {
+    pub fn new() -> TentHasher {
+        TentHasher {
             state: [
                 0x5d6daffc4411a967,
                 0xe22d4dea68577f34,
@@ -49,7 +60,23 @@ impl TentHash {
         }
     }
 
-    /// Updates the hash with input data.
+    /// Appends data to the data stream being hashed.
+    ///
+    /// This can be called repeatedly to incrementally append more and more data.
+    ///
+    /// ```rust
+    /// # use tenthash::TentHasher;
+    /// // As one chunk.
+    /// let mut hasher1 = TentHasher::new();
+    /// hasher1.update("Hello world!");
+    ///
+    /// // As multiple chunks.
+    /// let mut hasher2 = TentHasher::new();
+    /// hasher2.update("Hello");
+    /// hasher2.update(" world!");
+    ///
+    /// assert_eq!(hasher1.finalize(), hasher2.finalize());
+    /// ```
     pub fn update(&mut self, data: impl AsRef<[u8]>) {
         let mut data = data.as_ref();
         self.message_length += data.len() as u64;
@@ -76,6 +103,9 @@ impl TentHash {
     }
 
     /// Finalizes the hash and returns the digest.
+    ///
+    /// Note: this does *not* reset the hasher.  If you continue to call
+    /// `update()` it will continue computing a hash from the existing state.
     pub fn finalize(mut self) -> [u8; DIGEST_SIZE] {
         // Hash the remaining bytes if there are any.
         if self.buf_length > 0 {
