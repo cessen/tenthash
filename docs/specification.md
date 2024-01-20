@@ -1,4 +1,4 @@
-# TentHash Specification v0.2
+# TentHash Specification v0.3
 
 This document defines the TentHash hash function.  It aims to be concise and easy to follow for anyone writing an implementation of TentHash.  It does *not* explain the rationale behind TentHash's design.  For that, please see the [Design Rationale document](design_rationale.md).
 
@@ -15,7 +15,7 @@ fn do_hash(input_data):
 
     # Process input data.
     for each chunk in input_data:
-        hash_state += chunk
+        hash_state ^= chunk
         mix hash_state
 
     # Finalize.
@@ -45,16 +45,14 @@ The internal hash state consists of four 64-bit unsigned integers, short-hand la
 
 Input data is processed in 256-bit chunks.  **If the last chunk is less than 256 bits,** it is padded out to 256 bits with zeros and then processed as normal.
 
-Each chunk of data is treated as four 64-bit **little-endian** unsigned integers and is added into the hash state as follows:
+Each chunk of data is treated as four 64-bit **little-endian** unsigned integers and is xored into the hash state as follows:
 
 ```sh
-A += chunk[bits 0-63]
-B += chunk[bits 64-127]
-C += chunk[bits 128-191]
-D += chunk[bits 192-255]
+A ^= chunk[bits 0-63]
+B ^= chunk[bits 64-127]
+C ^= chunk[bits 128-191]
+D ^= chunk[bits 192-255]
 ```
-
-The additions are modulo 2<sup>64</sup>.
 
 
 ### Xoring the input length.
@@ -65,14 +63,14 @@ Once all input data has been processed, the length of the input data **in bits**
 A ^= data_length_in_bits
 ```
 
-Note: conforming implementations of TentHash are **not** required to handle data streams longer than 2<sup>64</sup>-1 bits.  However, implementations that wish to do so should wrap `data_length_in_bits` when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.
+Note: conforming implementations of TentHash are **not** required to handle data streams longer than 2<sup>64</sup>-1 bits.  However, implementations that wish to do so should simply wrap `data_length_in_bits` when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.
 
 
 ### Mixing the hash state.
 
 The mixing function is defined as follows:
 
-```sh
+```
 rotation_constants = [
     [51, 59], [25, 19], [8, 10], [35, 3],
     [45, 38], [61, 32], [23, 53],
@@ -110,8 +108,8 @@ Test inputs and their corresponding TentHash digests:
 - A single zero byte:
     - `b9769af5a7f421c0bbbe1063ea695d8e13e6a16d`,
 - The ascii string "0123456789":
-    - `6a513203d85d60e64ce3d171a28098a496f01225`,
+    - `4801dc8fd9753dac459dd96b312ff8fc30ad2996`,
 - The ascii string "abcdefghijklmnopqrstuvwxyz":
-    - `0ff9f1c49a264acea36739d91f9ac044d58f5d64`,
+    - `bcac704f1e65adfb5de7d9668cbadc658e4e2723`,
 - The ascii string "The quick brown fox jumps over the lazy dog.":
-    - `a7e5568ce1cb6d5933f2f7654f69f309b36dacac`,
+    - `4fe48174c1aa895a368e5f05d519259c322004b0`,

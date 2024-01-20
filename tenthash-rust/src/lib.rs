@@ -26,7 +26,7 @@
 //! hasher.update("Hello world!");
 //! let hash = hasher.finalize();
 //!
-//! assert_eq!(&hash[..4], &[0x19, 0x29, 0x33, 0xfe]);
+//! assert_eq!(&hash[..4], &[0x30, 0xd0, 0x8a, 0x79]);
 //! ```
 
 #![no_std]
@@ -84,12 +84,12 @@ impl TentHasher {
         while !data.is_empty() {
             if self.buf_length == 0 && data.len() >= BLOCK_SIZE {
                 // Process data directly, skipping the buffer.
-                add_data_to_state(&mut self.state, data);
+                xor_data_into_state(&mut self.state, data);
                 mix_state(&mut self.state);
                 data = &data[BLOCK_SIZE..];
             } else if self.buf_length == BLOCK_SIZE {
                 // Process the filled buffer.
-                add_data_to_state(&mut self.state, &self.buf);
+                xor_data_into_state(&mut self.state, &self.buf);
                 mix_state(&mut self.state);
                 self.buf_length = 0;
             } else {
@@ -103,14 +103,11 @@ impl TentHasher {
     }
 
     /// Finalizes the hash and returns the digest.
-    ///
-    /// Note: this does *not* reset the hasher.  If you continue to call
-    /// `update()` it will continue computing a hash from the existing state.
     pub fn finalize(mut self) -> [u8; DIGEST_SIZE] {
         // Hash the remaining bytes if there are any.
         if self.buf_length > 0 {
             (&mut self.buf[self.buf_length..]).fill(0); // Pad with zeros as needed.
-            add_data_to_state(&mut self.state, &self.buf);
+            xor_data_into_state(&mut self.state, &self.buf);
             mix_state(&mut self.state);
         }
 
@@ -134,14 +131,14 @@ impl TentHasher {
 /// The data must be at least 32 bytes long.  Only the first 32 bytes
 /// are added.
 #[inline(always)]
-fn add_data_to_state(state: &mut [u64; 4], data: &[u8]) {
+fn xor_data_into_state(state: &mut [u64; 4], data: &[u8]) {
     // Convert the data to native endian u64's and add to the
     // hash state.
     assert!(data.len() >= BLOCK_SIZE);
-    state[0] = state[0].wrapping_add(u64::from_le_bytes((&data[0..8]).try_into().unwrap()));
-    state[1] = state[1].wrapping_add(u64::from_le_bytes((&data[8..16]).try_into().unwrap()));
-    state[2] = state[2].wrapping_add(u64::from_le_bytes((&data[16..24]).try_into().unwrap()));
-    state[3] = state[3].wrapping_add(u64::from_le_bytes((&data[24..32]).try_into().unwrap()));
+    state[0] ^= u64::from_le_bytes((&data[0..8]).try_into().unwrap());
+    state[1] ^= u64::from_le_bytes((&data[8..16]).try_into().unwrap());
+    state[2] ^= u64::from_le_bytes((&data[16..24]).try_into().unwrap());
+    state[3] ^= u64::from_le_bytes((&data[24..32]).try_into().unwrap());
 }
 
 /// Mixes the passed hash state.

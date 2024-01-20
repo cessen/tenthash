@@ -39,10 +39,10 @@ Digest hash(const void *in_data, uint64_t data_len) {
         memcpy(buffer, data, chunk_size);
 
         // Add the chunk/buffer into the hash state.
-        state[0] += *((uint64_t *)buffer);
-        state[1] += *((uint64_t *)(buffer + 8));
-        state[2] += *((uint64_t *)(buffer + 16));
-        state[3] += *((uint64_t *)(buffer + 24));
+        state[0] ^= *((uint64_t *)buffer);
+        state[1] ^= *((uint64_t *)(buffer + 8));
+        state[2] ^= *((uint64_t *)(buffer + 16));
+        state[3] ^= *((uint64_t *)(buffer + 24));
 
         mix_state(state);
 
