@@ -12,7 +12,7 @@ TentHash is explicitly *not* intended to stand up to attacks.  Its otherwise rob
 
 ## Why yet another hash?
 
-TentHash aims to fill a gap in hash design between cryptographic and non-cryptographic hash functions.  Cryptographic hash functions produce message digests with strong collision resistance, but sacrifice speed and/or simplicity for security against attackers.  Most non-cryptographic hash functions, on the other hand, sacrifice either simplicity or collision resistance for speed.
+TentHash aims to fill a gap in hash design between cryptographic and non-cryptographic hash functions.  Cryptographic hash functions produce message digests with strong collision resistance, but sacrifice speed and/or simplicity for security against attackers.  Most non-cryptographic hash functions, on the other hand, sacrifice simplicity and/or collision resistance for speed.
 
 TentHash is squarely non-cryptographic, and is designed with the following goals in order of priority:
 
@@ -27,28 +27,28 @@ Additionally, TentHash aims to be *well documented*.  Independent implementation
 
 Below is a comparison of hashes that have outputs large enough to be used as message digests.  Some cryptographic hashes are included at the bottom for reference.  Data throughput is measured single-threaded on an AMD Ryzen Threadripper 3960X.
 
-| Name                  | Digest size          | Min diffusion per block | Blocks per full diffusion        | Data throughput<sup>2</sup> |
-|-----------------------|----------------------|-------------------------|----------------------------------|------------------|
-| TentHash              | 160 bits<sup>3</sup> | full                    | 1 block                          | 5.4 GB/s         |
-| -                     |                      |                         |                                  |                  |
-| MeowHash v0.5         | 128 bits             | ~32 bits                | ~6 blocks                        | 35.1 GB/s        |
-| xxHash3 (128-bit)     | 128 bits             | ~33 bits                | Never fully diffuses<sup>4</sup> | 38.3 GB/s        |
-| Murmur3 (x64 128-bit) | 128 bits             | ~32 bits                | ~6 blocks                        | 7.6 GB/s         |
-| FNV-1a (128-bit)      | 128 bits             | ~12 bits<sup>5</sup>    | Never fully diffuses             | 0.42 GB/s        |
-| CityHash128           | 128 bits             | ~3 bits                 | ~3 blocks                        | 14.8 GB/s        |
-| MetroHash128          | 128 bits             | ~3 bits                 | ~22 blocks                       | 15.6 GB/s        |
-| -                     |                      |                         |                                  |                  |
-| SHA2-256              | 256 bits             | full                    | 1 block                          | 0.25 GB/s        |
-| Blake2b               | 256 bits             | full                    | 1 block                          | 0.62 GB/s        |
-| Blake3                | 256 bits             | full                    | 1 block                          | 1.2 GB/s         |
+| Name                                  | Digest size          | Min diffusion per block | Blocks per full diffusion        | Data throughput<sup>2</sup> |
+|---------------------------------------|----------------------|-------------------------|----------------------------------|-----------------------------|
+| TentHash                              | 160 bits<sup>3</sup> | full                    | 1 block                          | 5.4 GB/s                    |
+| -                                     |                      |                         |                                  |                             |
+| MeowHash v0.5                         | 128 bits             | ~32 bits                | ~6 blocks                        | 35.1 GB/s                   |
+| xxHash3 (128-bit)                     | 128 bits             | ~33 bits                | Never fully diffuses<sup>4</sup> | 38.3 GB/s                   |
+| Murmur3 (x64 128-bit)                 | 128 bits             | ~32 bits                | ~6 blocks                        | 7.6 GB/s                    |
+| FNV-1a (128-bit)                      | 128 bits             | ~12 bits<sup>5</sup>    | Never fully diffuses             | 0.42 GB/s                   |
+| CityHash128 / FarmHash128<sup>6</sup> | 128 bits             | ~3 bits                 | ~3 blocks                        | 14.8 GB/s                   |
+| MetroHash128                          | 128 bits             | ~3 bits                 | ~22 blocks                       | 15.6 GB/s                   |
+| -                                     |                      |                         |                                  |                             |
+| SHA2-256                              | 256 bits             | full                    | 1 block                          | 0.25 GB/s                   |
+| Blake2b                               | 256 bits             | full                    | 1 block                          | 0.62 GB/s                   |
+| Blake3                                | 256 bits             | full                    | 1 block                          | 1.2 GB/s                    |
 
-The "Min diffusion per block" column is a measure of how well the internal hash state is diffused between incorporating input blocks.  Details of this metric are discussed in the rotation constants section of TentHash's [design rationale document](docs/design_rationale.md).  This metric is not feasible to determine from testing final hash outputs--it requires testing the internal state of the hash function's inner loop.
+The "Min diffusion per block" column is a measure of how well the internal hash state is diffused between incorporating input blocks.  Details of this metric are discussed in the rotation constants section of TentHash's [design rationale document](docs/design_rationale.md).  This metric is not feasible to determine from testing final hash outputs—it requires testing the internal state of the hash function's inner loop.
 
 **CityHash** and **MetroHash** both have extremely poor minimum diffusion per block.  It's not 100% clear how this impacts collision resistance, but it is *suspicious*.  Other hashes should be preferred in contexts where good collision resistance is critical.  But if you do use one of these, CityHash is a better choice because it diffuses after just a few additional blocks.
 
 **Murmur3** is a so-so choice here.  Its min diffusion isn't the worst of the bunch, but it's not especially good.  And it's certainly not conservative.  Both **MeowHash v0.5** and **xxHash3** are similar to Murmur3 in that respect, but substantially faster.  However, unlike Murmur3, xxHash3's implementation is very complex and relies on manually written SIMD code to achieve its high speeds.  And MeowHash relies on both manually written SIMD code *and* AES hardware instructions for its high speeds.
 
-**TentHash** is the only non-cryptographic hash in the list that is conservative about hash quality and collision strength.  It is also the simplest of those hashes to implement and port, and has reasonable (though not extreme) performance.  Finally, it is the only one of those hashes with a thorough write up and justification of its design.
+**TentHash** is the only non-cryptographic hash in the list that is conservative about hash quality and collision resistance.  It is also the simplest of those hashes to implement and port, and has reasonable (though not extreme) performance.  Finally, it is the only non-cryptographic hash in the list with a thorough write up and justification of its design.
 
 
 ## License
@@ -82,3 +82,4 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 3. For non-cryptographic hashes, a 160-bit digest isn't meaningfully better than a 128-bit digest in the vast majority of practical applications.  See the design rationale document for how TentHash ended up at 160 bits.
 4. For xxhash3 this isn't *quite* as bad as it sounds, because although the inner accumulation loop never fully diffuses on its own, there is a loop outside of that which does diffuse the hash state.  However, that diffusion is only run once every several blocks, so it is still a weakness.
 5. For FNV, "per block" isn't easy to define, because it hashes a byte at a time rather than a block at a time.  The listed diffusion number is what you get if you pretend it takes input data in blocks of 128 bits.
+6. CityHash128 and FarmHash128 use exactly the same construction for the part of the hash relevant to this metric.  (They may even just be identical hashes...?  I didn't check that far.)
