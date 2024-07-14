@@ -1,19 +1,8 @@
 # TentHash's Design Rationale
 
-This document explains the rationale behind TentHash's design.  See the [specification document](specification.md) for a complete and concise description of TentHash.
+This document explains the rationale behind TentHash's design.  It assumes that you have already read the [specification document](specification.md), which is a complete and concise description of TentHash but without any rationale provided.
 
-(Pre-1.0 this document serves not only to explain the rationale behind TentHash's design, but also to describe the claims I think I can make about TentHash's properties so that others can more easily audit those claims.)
-
-
-## Goals
-
-TentHash aims to be a robust *non-cryptographic* message digest that is simple to implement while still being reasonably fast.  More specifically, its design goals are (in order of priority):
-
-1. **Robust collision resistance.**  For all practical purposes, it should be safe to assume that different pieces of (legitimate) data will never have colliding hashes.  Moreover, the size of the output digest should *accurately reflect* the likelihood of such collisions.
-2. **Simplicity and portability.**  It should be easy to understand and straightforward to write conforming implementations, without need for special hardware instructions.
-3. **Reasonably fast.**  It doesn't need to win any speed competitions, but its speed should be measured in GB/sec not MB/sec.
-
-On the other hand, TentHash is explicitly **not** trying to be secure against attacks.  Again, it is a *non-cryptographic* hash function.
+This document focuses on how TentHash's design affects the quality of the hash, but there is a Q&A at the end that also addresses topics like speed and seeding.
 
 
 ## The xor & mix loop.
@@ -193,39 +182,22 @@ This wouldn't be necessary if we used the entire state as the digest.  But since
 The above sections have broadly covered the rationale behind TentHash's design.  This section answers related questions that people might have.
 
 
-### Q. Why yet another hash?  Why not just use \[hash name here\] instead?
+### Q. Why is TentHash slower than some other non-cryptographic hashes?
 
-Because all the cryptographic hashes I'm aware of are slow and/or are complex to implement, and all the non-cryptographic hashes I'm aware of with sufficiently large digest sizes are at least one of:
+One reason is that TentHash is conservative in its design with respect to collision resistance.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also might negatively impact collision resistance.  And it's unfortunately not feasible to test that empirically at the digest sizes in question, so TentHash chooses not to take that risk, which makes it slower.
 
-- Slow.
-- Complex and/or inscrutable.
-- Reliant on special hardware instructions for reasonable performance.
-- *Undocumented,* which in turn means that:
-    - Independent implementations have to infer how the hash works from source code.
-    - The rationale and tradeoffs of the design aren't up-front or easy to evaluate.
-
-I wanted a hash that was useful as a message digest, simple to implement/port, reasonably fast, and *documented*.  And as far as I was able to find, no such hash existed.
-
-It's possible, of course, that I missed one!  In which case: oops, we have an extra hash function now.
-
-
-### Q. Why is TentHash slower than some other fast hashes?
-
-One reason is that TentHash is conservative in its design with respect to collision resistance.  Most fast hashes (particularly the ones that hash at 10+ GB a second) skimp on internal state diffusion between incorporating input blocks.  That skimping *may* be okay, but it also may negatively impact collision resistance.  And it's not feasible to test that empirically at the digest sizes in question.
-
-Additionally, some hashes (e.g. xxHash and its variants) are designed to maximally exploit SIMD processing.  And others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
+Another factor is TentHash's choice to be simple and easily portable.  Many hashes (e.g. xxHash and its variants) are designed to maximally exploit SIMD processing.  And others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
 
 In other words, TentHash prioritizes quality and simplicity over maximum possible performance, whereas other hashes often prioritize performance over either quality or simplicity (or sometimes both).  TentHash still cares about performance, of course.  Just not as the *top* priority.
+
+Having said that, it is almost certainly possible to create a hash that is both simple and conservative about quality while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space.  But at the time of publication, I am not aware of any other hashes that have (successfully) pursued this same space.  I am, however, looking forward to seeing other (properly documented and justified!) hashes appear in this space in the future.
 
 
 ### Q. Does TentHash pass the SMHasher test suite?
 
-Yes, trivially.  Including all power-of-two truncations down to 32 bits (the smallest SMHasher will test).  But with two qualifications:
+Yes, trivially.  Including all power-of-two truncations down to 32 bits (the smallest SMHasher will test).  But with one qualification: TentHash isn't seedable, so it of course doesn't pass the seeding tests (e.g. the Perlin Noise test).  However, if you simply prepend the seed to the input data then TentHash passes the seeding tests as well.
 
-1. TentHash isn't seedable, so it of course doesn't pass the seeding tests.  But if you simply prepend (or append, either way) the seed to the input data, then TentHash passes the seeding tests as well.
-2. The SMHasher suite can only test power-of-two digest sizes, and TentHash is 160 bits.  To get around this, in place of testing 160 bits I tested 256 bits by outputting the entire internal state as a digest.
-
-(Aside: qualification 2 is interesting because we know from the analysis earlier in this document that TentHash isn't strictly 256 bits strong.  And yet it still cleanly passes SMHasher as a 256-bit hash.  This isn't because SMHasher is bad—it's not!  Rather, this is because even at just moderately sized hashes it's impossible to fully test a hash function for issues empirically.  In other words, SMHasher and similar test suites are useful, and hashes ought to pass them.  But *don't design your hashes against them*, lest you fall victim to Goodhart's law.)
+It's important to keep in mind, however, that [passing SMHasher is insufficient evidence of quality for a large-output hash](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) like TentHash.  This entire document serves as much better evidence of quality than a passing score from SMHasher.  (Although if TentHash did *not* pass SMHasher that would indeed be extremely strong evidence that it *wasn't* high quality.)
 
 
 ### Q. Why isn't TentHash seedable?
@@ -234,23 +206,25 @@ I'm not aware of any uses for seeding with TentHash's intended use case (non-cry
 
 Seeds are useful for cryptographic hashes in various circumstances, but as a non-cryptographic hash TentHash isn't appropriate in those circumstances.  Seeds can also be useful for non-cryptographic hashes with small (32 or 64-bit) output sizes in various applications, but TentHash isn't targeting those applications.
 
-Additionally, if seeding really is needed for some application, it can be easily accomplished by simply prepending or appending the seed to the input stream.  So there's no reason it needs to be part of the TentHash specification.
+Additionally, if seeding really is needed for some application, it can be easily accomplished by simply prepending the seed to the input stream.  So there's no reason it needs to be part of the TentHash specification.
 
 
 ### Q. Why the 160-bit digest size?
 
 160 bits actually exceeds the design target for TentHash, which was 128 bits.
 
-The reason for the 160-bit digest is simply that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the collision resistance of TentHash's internal state.  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
+The reason for the 160-bit digest is simply that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the conservative collision resistance of TentHash's internal state.  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
+
+Additionally, as a post-facto rationalization: if it turns out that TentHash's construction isn't as robust as I believe (which is always a possibility for any hash design), the 160-bit digest makes it more likely that it will still be a robust message digest regardless.
 
 
 ### Q. Why the 256-bit internal state size?
 
 In my testing, 256 bits struck a good balance between having good performance and having a simple implementation.
 
-128 bits resulted in a slightly simpler implementation, but also significantly reduces performance: with 256 bits you can process roughly twice as much data in the same time due to instruction-level parallelism.  Also, at 128 bits the Skein MIX function requires more rounds to achieve sufficient diffusion, so it would also be slower due to needing to bump the number of rounds up.
+128 bits resulted in a slightly simpler implementation of the mix function, but also significantly reduced performance: with 256 bits you can process roughly twice as much data in the same time due to instruction-level parallelism.  Also, at 128 bits the mix function requires more rounds to achieve sufficient diffusion, so it would also be slower due to needing to bump the number of rounds up.
 
-512 bits, on the other hand, notably increased implementation complexity.  And although it certainly has the potential for performance gains with a wide SIMD implementation, a straightforward scalar implementation decreased performance compared to 256 bits.
+512 bits, on the other hand, notably increased implementation complexity.  And although it certainly has the potential for performance gains with a wide SIMD implementation, a straightforward scalar implementation had worse performance than 256 bits.
 
 So given TentHash's goals, 256 bits felt like it hit a good sweet spot: good performance with a simple implementation.
 
@@ -259,18 +233,18 @@ So given TentHash's goals, 256 bits felt like it hit a good sweet spot: good per
 
 This is a common approach to make hash functions optimally fast across a range of input sizes, as exemplified by MurmurHash.  If done properly, it's an excellent approach.
 
-I decided against this for TentHash because of TentHash's intended application (message digests) and its goal of simplicity.  Generally speaking, small inputs (16 bytes or less) aren't the expected common case for TentHash, so adding complexity to squeeze more performance for those cases felt counterproductive.
+I decided against this because of TentHash's intended application (message digests) and its goal of simplicity.  Small inputs aren't the expected common case for TentHash, so adding complexity to squeeze more performance for those cases felt counterproductive.
 
 
 ### Q. Why not process striped data in multiple independent lanes for faster SIMD execution?
 
-Some fast hashes do indeed take this approach.  And it works really well for improving performance: since the lanes never interact until the end, you can run them perfectly in parallel.
+Some fast hashes do indeed take this approach, and it works really well for improving performance: since the lanes never interact until the end, you can run them perfectly in parallel.
 
-However, doing that reduces the collision resistance of the whole hash to that of a single lane.  For example, if your lane size is only 64-bits wide, then using the striped-data independent-lane approach results in a hash with a collision resistance that's equivalent to a 64-bit hash.  And this is true even if the lanes are mixed into e.g. a 256-bit digest at the end.  So with small lane sizes the striped-data independent-lane approach isn't appropriate for a hash with TentHash's goals.
+However, doing that effectively reduces the collision resistance of the whole hash to that of a single lane.  For example, if your lane size is only 64-bits wide, then using independent lanes results in a hash with a collision resistance that's only reliably as good as a 64-bit hash.  And this is true even if the lanes are mixed into e.g. a 256-bit digest at the end.  So with small lane sizes this approach isn't appropriate for a hash with TentHash's quality goals.
 
-Using 128-bit lanes would be fine.  However, as mentioned above, Skein's MIX function requires more rounds for sufficient diffusion at that size.  Combined with the fact that the 256-bit version is already mostly parallelized by instruction-level parallelism on modern CPUs, there's a good chance that the two-lane approach with SIMD would actually be slower.  And it's certainly a performance loss with a scalar implementation.
+Using 128-bit lanes would be fine.  However, the mix function requires more rounds for sufficient diffusion at that size.  Combined with the fact that the 256-bit version is already mostly parallelized by instruction-level parallelism on modern CPUs, it's very likely that two lanes with 256-bit SIMD would actually be slower, and it's *certainly* slower with a straightforward scalar implementation.  512-bit SIMD would likely be faster, but that doesn't seem worth the additional complexity given TentHash's goals.
 
-Lastly, keeping things to a single lane simplifies the implementation a little because you don't need to combine the lanes at the end.
+Lastly, keeping things to a single lane simplifies the implementation outside of the mix function as well because you don't need an extra step to combine the lanes at the end.
 
 
 ### Q. Why doesn't TentHash use multiple threads for faster hashing?
