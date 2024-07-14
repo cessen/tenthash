@@ -36,7 +36,7 @@ The "blocks per full diffusion" column is a partial indicator of hash quality.  
 
 | Name                                  | Digest size          | Data throughput<sup>3</sup> | Blocks per full diffusion | Documented design rationale |
 |---------------------------------------|----------------------|-----------------------------|---------------------------|-----------------------------|
-| TentHash                              | 160 bits<sup>4</sup> | 8.4 GB/s                    | 1 block                   | Yes                         |
+| TentHash                              | 160 bits<sup>4</sup> | 8.6 GB/s                    | 1 block                   | Yes                         |
 | -                                     |                      |                             |                           |                             |
 | xxHash3 (128-bit)                     | 128 bits             | 56.0 GB/s                   | Never<sup>5</sup>         | No                          |
 | MeowHash v0.5                         | 128 bits             | 50.5 GB/s                   | ~6 blocks                 | No<sup>6</sup>              |
