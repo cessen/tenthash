@@ -29,16 +29,16 @@ Digest hash(const void *in_data, uint64_t data_len) {
         0x894e29b9611eb173,
     };
 
-    // Process the input data in 256-bit chunks.
+    // Process the input data in 256-bit blocks.
     while (data_len > 0) {
-        uint64_t chunk_size = (data_len < TENT_BLOCK_SIZE) ? data_len : TENT_BLOCK_SIZE;
+        uint64_t block_size = (data_len < TENT_BLOCK_SIZE) ? data_len : TENT_BLOCK_SIZE;
 
-        // Copy the chunk into a zeroed-out buffer.  When the chunk is
+        // Copy the block into a zeroed-out buffer.  When the block is
         // smaller than 256 bits this pads it out to 256 bits with zeros.
         uint8_t buffer[TENT_BLOCK_SIZE] = {0};
-        memcpy(buffer, data, chunk_size);
+        memcpy(buffer, data, block_size);
 
-        // Add the chunk/buffer into the hash state.
+        // Incorporate the block into the hash state.
         state[0] ^= *((uint64_t *)buffer);
         state[1] ^= *((uint64_t *)(buffer + 8));
         state[2] ^= *((uint64_t *)(buffer + 16));
@@ -46,8 +46,8 @@ Digest hash(const void *in_data, uint64_t data_len) {
 
         mix_state(state);
 
-        data += chunk_size;
-        data_len -= chunk_size;
+        data += block_size;
+        data_len -= block_size;
     }
 
     // Finalize.

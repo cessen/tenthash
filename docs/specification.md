@@ -14,8 +14,8 @@ fn do_hash(input_data):
     hash_state = [A, B, C, D]
 
     # Process input data.
-    for each chunk in input_data:
-        hash_state ^= chunk
+    for each block in input_data:
+        hash_state ^= block
         mix hash_state
 
     # Finalize.
@@ -43,15 +43,15 @@ The internal hash state consists of four 64-bit unsigned integers, short-hand la
 
 ### Adding the input data.
 
-Input data is processed in 256-bit chunks.  **If the last chunk is less than 256 bits,** it is padded out to 256 bits with zeros and then processed as normal.
+Input data is processed in 256-bit blocks.  **If the last block is less than 256 bits,** it is padded out to 256 bits with zeros and then processed as normal.
 
-Each chunk of data is treated as four 64-bit **little-endian** unsigned integers and is xored into the hash state as follows:
+Each block of data is treated as four 64-bit **little-endian** unsigned integers and is xored into the hash state as follows:
 
 ```sh
-A ^= chunk[bits 0-63]
-B ^= chunk[bits 64-127]
-C ^= chunk[bits 128-191]
-D ^= chunk[bits 192-255]
+A ^= block[bits 0-63]
+B ^= block[bits 64-127]
+C ^= block[bits 128-191]
+D ^= block[bits 192-255]
 ```
 
 
@@ -87,7 +87,7 @@ fn mix(hash_state):
 
 Where `<<<` is a bit-wise left rotation and addition is modulo 2<sup>64</sup>.
 
-As shown in the overview at the beginning of this document, the hash state is mixed once after adding each input chunk and twice during finalization.
+As shown in the overview at the beginning of this document, the hash state is mixed once after adding each input block and twice during finalization.
 
 
 ### Producing the digest.

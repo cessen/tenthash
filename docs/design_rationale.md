@@ -21,8 +21,8 @@ On the other hand, TentHash is explicitly **not** trying to be secure against at
 TentHash mixes the input data into the hash state with a simple xor-and-mix loop, like so:
 
 ```
-for chunk in input_data:
-    hash_state ^= chunk
+for block in input_data:
+    hash_state ^= block
     mix(hash_state)
 ```
 
@@ -32,7 +32,7 @@ Assuming a good mixing function, this loop accomplishes three important things:
 
 1. It gives every input bit a good chance of affecting every output bit in the digest.  Meaning that flipping any single bit in the input will, with overwhelming probability, significantly change the output digest.  (This is also called "avalanche".)
 2. It gives the relationship between all input bits a *high complexity*.  Meaning that, with overwhelming probability, the effect of flipping a single input bit can only be "cancelled out" by a complex random change elsewhere in the input, not a simple change.
-3. It *strongly orders* the input chunks.  Meaning that, with overwhelming probability, swapping any two input chunks will significantly change the output digest.
+3. It *strongly orders* the blocks of input data.  Meaning that, with overwhelming probability, swapping any two input blocks will significantly change the output digest.
 
 
 ## The mixing function.
