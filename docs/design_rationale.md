@@ -4,6 +4,8 @@ This document explains the rationale behind TentHash's design.  It assumes that 
 
 This document focuses on how TentHash's design affects the quality of the hash, but there is a Q&A at the end that also addresses topics like speed and seeding.
 
+**A note about terminology:** the terms "collision resistance" and "collision resistance strength" are used throughout this document.  They are *not* used in their cryptographic sense, since TentHash is a non-cryptographic hash.  Rather, they are used as a convenient short-hand for something along the lines of "likelihood of hash collisions with legitimate data", simply because I'm not aware of any convenient terms that unambiguously express this concept. 
+
 
 ## The xor & mix loop.
 
@@ -184,18 +186,18 @@ The above sections have broadly covered the rationale behind TentHash's design. 
 
 ### Q. Why is TentHash slower than some other non-cryptographic hashes?
 
-One reason is that TentHash is conservative in its design with respect to collision resistance.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also might negatively impact collision resistance.  And it's unfortunately not feasible to test that empirically at the digest sizes in question, so TentHash chooses not to take that risk, which makes it slower.
+One reason is that TentHash is conservative in its design with respect to collision resistance.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact collision resistance.  It's unfortunately not feasible to directly test that empirically at the digest sizes in question, so TentHash chooses not to take that risk, which makes it slower.
 
 Another factor is TentHash's choice to be simple and easily portable.  Many hashes (e.g. xxHash and its variants) are designed to maximally exploit SIMD processing.  And others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
 
 In other words, TentHash prioritizes quality and simplicity over maximum possible performance, whereas other hashes often prioritize performance over either quality or simplicity (or sometimes both).  TentHash still cares about performance, of course.  Just not as the *top* priority.
 
-Having said that, it is almost certainly possible to create a hash that is both simple and conservative about quality while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space.  But at the time of publication, I am not aware of any other hashes that have (successfully) pursued this same space.  I am, however, looking forward to seeing other (properly documented and justified!) hashes appear in this space in the future.
+Having said that, I'm sure it's possible to create a hash that is both conservative about quality and simple while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
 
 
 ### Q. Does TentHash pass the SMHasher test suite?
 
-Yes, trivially.  Including all power-of-two truncations down to 32 bits (the smallest SMHasher will test).  But with one qualification: TentHash isn't seedable, so it of course doesn't pass the seeding tests (e.g. the Perlin Noise test).  However, if you simply prepend the seed to the input data then TentHash passes the seeding tests as well.
+Yes, trivially.  Including all power-of-two truncations down to 32 bits, the smallest SMHasher will test.  But with one qualification: TentHash isn't seedable, so it of course doesn't pass the seeding tests (e.g. the Perlin Noise test).  However, if you simply prepend the seed to the input data then TentHash passes the seeding tests as well.
 
 It's important to keep in mind, however, that [passing SMHasher is insufficient evidence of quality for a large-output hash](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) like TentHash.  This entire document serves as much better evidence of quality than a passing score from SMHasher.  (Although if TentHash did *not* pass SMHasher that would indeed be extremely strong evidence that it *wasn't* high quality.)
 
