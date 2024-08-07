@@ -1,8 +1,8 @@
-# TentHash v0.3
+# TentHash v0.4
 
 A robust 160-bit *non-cryptographic* hash function.
 
-- [TentHash Specification v0.3](docs/specification.md) **WARNING:** TentHash's design is not yet finalized, and digest results may change before the specification is declared 1.0.
+- [TentHash Specification v0.4](docs/specification.md) **WARNING:** TentHash's design is not yet finalized, and digest results may change before the specification is declared 1.0.
 - [Design Rationale Document](docs/design_rationale.md)
 
 TentHash is a high-quality, reasonably fast, large-output hash.  It has a simple design, doesn't require any special hardware instructions, and takes less than 50 lines of straightforward code for a full implementation.
@@ -34,7 +34,7 @@ Data throughput was measured single-threaded on an AMD Ryzen 5 7640U.  TentHash'
 
 | Name                                  | Digest size          | Data throughput<sup>2</sup> | Blocks per full diffusion<sup>1</sup> | Documented design rationale |
 |---------------------------------------|----------------------|-----------------------------|---------------------------------------|-----------------------------|
-| TentHash                              | 160 bits<sup>3</sup> | 8.6 GB/s                    | 1 block                               | Yes                         |
+| TentHash                              | 160 bits<sup>3</sup> | 8.5 GB/s                    | 1 block                               | Yes                         |
 | -                                     |                      |                             |                                       |                             |
 | xxHash3 (128-bit)                     | 128 bits             | 56.0 GB/s                   | Never                                 | No                          |
 | MeowHash v0.5                         | 128 bits             | 50.5 GB/s                   | ~6 blocks                             | No<sup>4</sup>              |

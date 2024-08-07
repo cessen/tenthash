@@ -69,6 +69,9 @@ void mix_state(uint64_t *state) {
         {45, 38}, {61, 32}, {23, 53},
     };
 
+    state[0] ^= 0x2ea6370ac28ae776;
+    state[1] ^= 0x5abb00d71a7850cc;
+
     for (int i = 0; i < 7; i++) {
         state[0] += state[2];
         state[1] += state[3];

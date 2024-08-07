@@ -1,4 +1,4 @@
-# TentHash Specification v0.3
+# TentHash Specification v0.4
 
 This document defines the TentHash hash function.  It aims to be concise and easy to follow for anyone writing an implementation of TentHash.  It does *not* explain the rationale behind TentHash's design.  For that, please see the [Design Rationale document](design_rationale.md).
 
@@ -77,6 +77,8 @@ rotation_constants = [
 ]
 
 fn mix(hash_state):
+    A ^= 0x2ea6370ac28ae776
+    B ^= 0x5abb00d71a7850cc
     for pair in rotation_constants:
         A += C
         B += D
@@ -104,12 +106,12 @@ For example, a digest of `[10, 212, 156, ...]` would be printed as `0ad49c...`.
 Test inputs and their corresponding TentHash digests:
 
 - Empty (no input data):
-    - `5206df9490caa9093ad61971a0fcb2aa6115d542`,
+    - `71a12521e927617353cadcbb22475322036e5752`,
 - A single zero byte:
-    - `b9769af5a7f421c0bbbe1063ea695d8e13e6a16d`,
+    - `3e45ee52422aa2f935c70a2206b43afc92dce337`,
 - The ascii string "0123456789":
-    - `4801dc8fd9753dac459dd96b312ff8fc30ad2996`,
+    - `9c21ddc65dcc3ad2982c321c7174c475dc705e03`,
 - The ascii string "abcdefghijklmnopqrstuvwxyz":
-    - `bcac704f1e65adfb5de7d9668cbadc658e4e2723`,
+    - `bf1d10627b6f8094e333111e646a37f7edcfabb6`,
 - The ascii string "The quick brown fox jumps over the lazy dog.":
-    - `4fe48174c1aa895a368e5f05d519259c322004b0`,
+    - `21227d4cb3e752b05a386d68580672ec8f26d677`,

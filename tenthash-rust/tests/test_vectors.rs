@@ -1,14 +1,14 @@
 use tenthash::TentHasher;
 
 const TEST_VECTORS: &[(&[u8], &str)] = &[
-    (&[], "5206df9490caa9093ad61971a0fcb2aa6115d542"),
-    (&[0], "b9769af5a7f421c0bbbe1063ea695d8e13e6a16d"),
-    (b"0123456789", "4801dc8fd9753dac459dd96b312ff8fc30ad2996"),
-    (b"abcdefghijklmnopqrstuvwxyz", "bcac704f1e65adfb5de7d9668cbadc658e4e2723"),
-    (b"The quick brown fox jumps over the lazy dog.", "4fe48174c1aa895a368e5f05d519259c322004b0"),
+    (&[], "71a12521e927617353cadcbb22475322036e5752"),
+    (&[0], "3e45ee52422aa2f935c70a2206b43afc92dce337"),
+    (b"0123456789", "9c21ddc65dcc3ad2982c321c7174c475dc705e03"),
+    (b"abcdefghijklmnopqrstuvwxyz", "bf1d10627b6f8094e333111e646a37f7edcfabb6"),
+    (b"The quick brown fox jumps over the lazy dog.", "21227d4cb3e752b05a386d68580672ec8f26d677"),
     (
         b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-        "f9d38490ca5a880b08dd75edc3985c0a2a61999e",
+        "e206702531be932c570dc0f6ae33eab2f37a4e6c",
     ),
 ];
 
@@ -55,7 +55,7 @@ fn one_chunk() {
 
 #[test]
 fn multi_chunk() {
-    for chunk_size in 1..260 {
+    for chunk_size in 1..1024 {
         for (data, digest) in TEST_VECTORS.iter().copied() {
             if data.len() >= chunk_size {
                 let mut hasher = TentHasher::new();

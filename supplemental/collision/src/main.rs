@@ -75,6 +75,9 @@ fn unmix_state(state: &mut [u64; 4]) {
         state[1] = state[1].wrapping_sub(state[3]);
         state[0] = state[0].wrapping_sub(state[2]);
     }
+
+    state[0] ^= 0x2ea6370ac28ae776;
+    state[1] ^= 0x5abb00d71a7850cc;
 }
 
 #[cfg(test)]
@@ -91,6 +94,9 @@ mod test {
             [61, 32],
             [23, 53],
         ];
+
+        state[0] ^= 0x2ea6370ac28ae776;
+        state[1] ^= 0x5abb00d71a7850cc;
 
         for rot_pair in ROTATIONS.iter() {
             state[0] = state[0].wrapping_add(state[2]);

@@ -5,11 +5,12 @@ use tenthash::TentHasher;
 
 fn tent_hash(c: &mut Criterion) {
     let benches = [
-        ("10b", 10, 10),                      // 10-byte input.
-        ("100b", 100, 100),                   // 100-byte input.
-        ("1kb", 1000, 1000),                  // 1kb input.
-        ("100kb_1kb_chunks", 100000, 1000),   // 100kb input, processed in 1kb chunks.
-        ("100kb_10kb_chunks", 100000, 10000), // 100kb input, processed in 10kb chunks.
+        ("10b", 10, 10),                        // 10-byte input.
+        ("100b", 100, 100),                     // 100-byte input.
+        ("1kb", 1000, 1000),                    // 1kb input.
+        ("100kb_1kb_chunks", 100000, 1000),     // 100kb input, processed in 1kb chunks.
+        ("100kb_10kb_chunks", 100000, 10000),   // 100kb input, processed in 10kb chunks.
+        ("100kb_single_chunk", 100000, 100000), // 100kb input, processed in one go.
     ];
 
     let mut group = c.benchmark_group("tent_hash");

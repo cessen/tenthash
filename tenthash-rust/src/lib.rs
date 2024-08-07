@@ -26,13 +26,16 @@
 //! hasher.update("Hello world!");
 //! let hash = hasher.finalize();
 //!
-//! assert_eq!(&hash[..4], &[0x30, 0xd0, 0x8a, 0x79]);
+//! assert_eq!(&hash[..4], &[0x79, 0x69, 0x92, 0x4c]);
 //! ```
 
 #![no_std]
 
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
+
+const K0: u64 = 0x2ea6370ac28ae776;
+const K1: u64 = 0x5abb00d71a7850cc;
 
 /// The TentHash hasher.  Processes input bytes and outputs a TentHash digest.
 #[derive(Debug, Copy, Clone)]
@@ -84,11 +87,15 @@ impl TentHasher {
         while !data.is_empty() {
             if self.buf_length == 0 && data.len() >= BLOCK_SIZE {
                 // Process data directly, skipping the buffer.
+                self.state[0] ^= K0;
+                self.state[1] ^= K1;
                 xor_data_into_state(&mut self.state, data);
                 mix_state(&mut self.state);
                 data = &data[BLOCK_SIZE..];
             } else if self.buf_length == BLOCK_SIZE {
                 // Process the filled buffer.
+                self.state[0] ^= K0;
+                self.state[1] ^= K1;
                 xor_data_into_state(&mut self.state, &self.buf);
                 mix_state(&mut self.state);
                 self.buf_length = 0;
@@ -107,6 +114,8 @@ impl TentHasher {
         // Hash the remaining bytes if there are any.
         if self.buf_length > 0 {
             (&mut self.buf[self.buf_length..]).fill(0); // Pad with zeros as needed.
+            self.state[0] ^= K0;
+            self.state[1] ^= K1;
             xor_data_into_state(&mut self.state, &self.buf);
             mix_state(&mut self.state);
         }
@@ -114,7 +123,11 @@ impl TentHasher {
         // Incorporate the message length (in bits) and do the
         // final mixing.
         self.state[0] ^= self.message_length * 8;
+        self.state[0] ^= K0;
+        self.state[1] ^= K1;
         mix_state(&mut self.state);
+        self.state[0] ^= K0;
+        self.state[1] ^= K1;
         mix_state(&mut self.state);
 
         // Get the digest as a byte array and return it.
