@@ -1,4 +1,4 @@
-//! A program that runs TestHash in reverse to intentionally create hash
+//! A program that runs TentHash in reverse to intentionally create hash
 //! collisions.
 //!
 //! The purpose of this is to clearly demonstrate that TentHash should *never*
