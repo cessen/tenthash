@@ -72,8 +72,8 @@ The mixing function is defined as follows:
 
 ```
 rotation_constants = [
-    [51, 59], [25, 19], [8, 10], [35, 3],
-    [45, 38], [61, 32], [23, 53],
+    [16, 28], [14, 57], [11, 22], [35, 34],
+    [57, 16], [59, 40], [44, 13],
 ]
 
 fn mix(hash_state):
@@ -106,12 +106,12 @@ For example, a digest of `[10, 212, 156, ...]` would be printed as `0ad49c...`.
 Test inputs and their corresponding TentHash digests:
 
 - Empty (no input data):
-    - `71a12521e927617353cadcbb22475322036e5752`,
+    - `e0f579d77b71ae9a5aacf67642f42a6f6d8b57e4`,
 - A single zero byte:
-    - `3e45ee52422aa2f935c70a2206b43afc92dce337`,
+    - `6c3cc3b2da663baf113de2e8cbd923163a87847a`,
 - The ascii string "0123456789":
-    - `9c21ddc65dcc3ad2982c321c7174c475dc705e03`,
+    - `4b49acd59a5482f39a0e7f8935149df94ee69185`,
 - The ascii string "abcdefghijklmnopqrstuvwxyz":
-    - `bf1d10627b6f8094e333111e646a37f7edcfabb6`,
+    - `66a2bd210f2cdf08aab5fe6627484c157c7c98b9`,
 - The ascii string "The quick brown fox jumps over the lazy dog.":
-    - `21227d4cb3e752b05a386d68580672ec8f26d677`,
+    - `715cd573976859663c2ebaf21dacd7bd78e11a71`,

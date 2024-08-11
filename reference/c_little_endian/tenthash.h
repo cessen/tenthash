@@ -65,8 +65,8 @@ Digest hash(const void *in_data, uint64_t data_len) {
 void mix_state(uint64_t *state) {
     // Rotation constants.
     const static int ROTS[7][2] = {
-        {51, 59}, {25, 19}, {8, 10}, {35, 3},
-        {45, 38}, {61, 32}, {23, 53},
+        {16, 28}, {14, 57}, {11, 22}, {35, 34},
+        {57, 16}, {59, 40}, {44, 13},
     };
 
     state[0] ^= 0x2ea6370ac28ae776;

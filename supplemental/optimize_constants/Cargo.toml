@@ -1,0 +1,10 @@
+[package]
+name = "optimize_constants"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nanorand = "0.7"
+rayon = "1.10"

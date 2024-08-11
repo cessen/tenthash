@@ -26,7 +26,7 @@
 //! hasher.update("Hello world!");
 //! let hash = hasher.finalize();
 //!
-//! assert_eq!(&hash[..4], &[0x79, 0x69, 0x92, 0x4c]);
+//! assert_eq!(&hash[..4], &[0x90, 0x39, 0x6e, 0xc1]);
 //! ```
 
 #![no_std]
@@ -162,13 +162,13 @@ fn xor_data_into_state(state: &mut [u64; 4], data: &[u8]) {
 #[inline(always)]
 fn mix_state(state: &mut [u64; 4]) {
     const ROTATIONS: &[[u32; 2]] = &[
-        [51, 59],
-        [25, 19],
-        [8, 10],
-        [35, 3],
-        [45, 38],
-        [61, 32],
-        [23, 53],
+        [16, 28],
+        [14, 57],
+        [11, 22],
+        [35, 34],
+        [57, 16],
+        [59, 40],
+        [44, 13],
     ];
 
     for rot_pair in ROTATIONS.iter() {
