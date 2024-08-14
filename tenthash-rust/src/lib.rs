@@ -26,7 +26,7 @@
 //! hasher.update("Hello world!");
 //! let hash = hasher.finalize();
 //!
-//! assert_eq!(&hash[..4], &[0x90, 0x39, 0x6e, 0xc1]);
+//! assert_eq!(&hash[..4], &[0x15, 0x5f, 0xa, 0x35]);
 //! ```
 
 #![no_std]
@@ -34,10 +34,48 @@
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
 
-const K0: u64 = 0x2ea6370ac28ae776;
-const K1: u64 = 0x5abb00d71a7850cc;
+/// Computes the hash of a piece of data in one go.
+pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
+    let mut state = [
+        0x5d6daffc4411a967,
+        0xe22d4dea68577f34,
+        0xca50864d814cbc2e,
+        0x894e29b9611eb173,
+    ];
 
-/// The TentHash hasher.  Processes input bytes and outputs a TentHash digest.
+    let mut data = data.as_ref();
+    let message_bit_length = data.len() as u64 * 8;
+
+    // Process full-size chunks.
+    while data.len() >= BLOCK_SIZE {
+        xor_data_into_state(&mut state, data);
+        mix_state(&mut state);
+        data = &data[BLOCK_SIZE..];
+    }
+
+    // Process any remaining data if needed.
+    if !data.is_empty() {
+        let mut buffer = [0u8; BLOCK_SIZE];
+        (&mut buffer[..data.len()]).copy_from_slice(data);
+        xor_data_into_state(&mut state, &buffer);
+        mix_state(&mut state);
+    }
+
+    // Incorporate the message length (in bits) and do the
+    // final mixing.
+    state[0] ^= message_bit_length;
+    mix_state(&mut state);
+    mix_state(&mut state);
+
+    // Get the digest as a byte array and return it.
+    let mut digest = [0u8; DIGEST_SIZE];
+    digest[0..8].copy_from_slice(&state[0].to_le_bytes());
+    digest[8..16].copy_from_slice(&state[1].to_le_bytes());
+    digest[16..20].copy_from_slice(&state[2].to_le_bytes()[0..4]);
+    return digest;
+}
+
+/// A streaming hasher, for processing data in progressive chunks.
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 #[repr(align(32))]
@@ -87,15 +125,11 @@ impl TentHasher {
         while !data.is_empty() {
             if self.buf_length == 0 && data.len() >= BLOCK_SIZE {
                 // Process data directly, skipping the buffer.
-                self.state[0] ^= K0;
-                self.state[1] ^= K1;
                 xor_data_into_state(&mut self.state, data);
                 mix_state(&mut self.state);
                 data = &data[BLOCK_SIZE..];
             } else if self.buf_length == BLOCK_SIZE {
                 // Process the filled buffer.
-                self.state[0] ^= K0;
-                self.state[1] ^= K1;
                 xor_data_into_state(&mut self.state, &self.buf);
                 mix_state(&mut self.state);
                 self.buf_length = 0;
@@ -114,8 +148,6 @@ impl TentHasher {
         // Hash the remaining bytes if there are any.
         if self.buf_length > 0 {
             (&mut self.buf[self.buf_length..]).fill(0); // Pad with zeros as needed.
-            self.state[0] ^= K0;
-            self.state[1] ^= K1;
             xor_data_into_state(&mut self.state, &self.buf);
             mix_state(&mut self.state);
         }
@@ -123,11 +155,7 @@ impl TentHasher {
         // Incorporate the message length (in bits) and do the
         // final mixing.
         self.state[0] ^= self.message_length * 8;
-        self.state[0] ^= K0;
-        self.state[1] ^= K1;
         mix_state(&mut self.state);
-        self.state[0] ^= K0;
-        self.state[1] ^= K1;
         mix_state(&mut self.state);
 
         // Get the digest as a byte array and return it.
@@ -173,8 +201,8 @@ fn mix_state(state: &mut [u64; 4]) {
 
     for rot_pair in ROTATIONS.iter() {
         state[0] = state[0].wrapping_add(state[2]);
-        state[1] = state[1].wrapping_add(state[3]);
         state[2] = state[2].rotate_left(rot_pair[0]) ^ state[0];
+        state[1] = state[1].wrapping_add(state[3]);
         state[3] = state[3].rotate_left(rot_pair[1]) ^ state[1];
 
         state.swap(0, 1);

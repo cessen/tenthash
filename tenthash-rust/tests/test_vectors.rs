@@ -1,14 +1,14 @@
 use tenthash::TentHasher;
 
 const TEST_VECTORS: &[(&[u8], &str)] = &[
-    (&[], "e0f579d77b71ae9a5aacf67642f42a6f6d8b57e4"),
-    (&[0], "6c3cc3b2da663baf113de2e8cbd923163a87847a"),
-    (b"0123456789", "4b49acd59a5482f39a0e7f8935149df94ee69185"),
-    (b"abcdefghijklmnopqrstuvwxyz", "66a2bd210f2cdf08aab5fe6627484c157c7c98b9"),
-    (b"The quick brown fox jumps over the lazy dog.", "715cd573976859663c2ebaf21dacd7bd78e11a71"),
+    (&[], "68c8213b7a76b8ed267dddb3d8717bb3b6e7cc0a"),
+    (&[0], "3cf6833cca9c4d5e211318577bab74bf12a4f090"),
+    (b"0123456789", "a7d324bde0bf6ce3427701628f0f8fc329c2a116"),
+    (b"abcdefghijklmnopqrstuvwxyz", "f1be4be1a0f9eae6500fb2f6b64f3daa3990ac1a"),
+    (b"The quick brown fox jumps over the lazy dog.", "de77f1c134228be1b5b25c941d5102f87f3e6d39"),
     (
         b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-        "034aa1b52c0dbc25424d9e001fca39c458652647",
+        "53da1e3920a9e5743065f28acaa2a93c51389b3d",
     ),
 ];
 
@@ -45,7 +45,14 @@ pub fn digest_to_string(digest: &[u8]) -> String {
 }
 
 #[test]
-fn one_chunk() {
+fn single_call() {
+    for (data, digest) in TEST_VECTORS.iter().copied() {
+        assert_eq!(digest_to_string(&tenthash::hash(data)), digest);
+    }
+}
+
+#[test]
+fn streaming_one_chunk() {
     for (data, digest) in TEST_VECTORS.iter().copied() {
         let mut hasher = TentHasher::new();
         hasher.update(data);
@@ -54,7 +61,7 @@ fn one_chunk() {
 }
 
 #[test]
-fn multi_chunk() {
+fn streaming_multi_chunk() {
     for chunk_size in 1..1024 {
         for (data, digest) in TEST_VECTORS.iter().copied() {
             if data.len() >= chunk_size {

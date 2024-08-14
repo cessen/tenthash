@@ -77,8 +77,6 @@ rotation_constants = [
 ]
 
 fn mix(hash_state):
-    A ^= 0x2ea6370ac28ae776
-    B ^= 0x5abb00d71a7850cc
     for pair in rotation_constants:
         A += C
         B += D
@@ -106,12 +104,12 @@ For example, a digest of `[10, 212, 156, ...]` would be printed as `0ad49c...`.
 Test inputs and their corresponding TentHash digests:
 
 - Empty (no input data):
-    - `e0f579d77b71ae9a5aacf67642f42a6f6d8b57e4`,
+    - `68c8213b7a76b8ed267dddb3d8717bb3b6e7cc0a`,
 - A single zero byte:
-    - `6c3cc3b2da663baf113de2e8cbd923163a87847a`,
+    - `3cf6833cca9c4d5e211318577bab74bf12a4f090`,
 - The ascii string "0123456789":
-    - `4b49acd59a5482f39a0e7f8935149df94ee69185`,
+    - `a7d324bde0bf6ce3427701628f0f8fc329c2a116`,
 - The ascii string "abcdefghijklmnopqrstuvwxyz":
-    - `66a2bd210f2cdf08aab5fe6627484c157c7c98b9`,
+    - `f1be4be1a0f9eae6500fb2f6b64f3daa3990ac1a`,
 - The ascii string "The quick brown fox jumps over the lazy dog.":
-    - `715cd573976859663c2ebaf21dacd7bd78e11a71`,
+    - `de77f1c134228be1b5b25c941d5102f87f3e6d39`,

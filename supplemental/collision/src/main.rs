@@ -1,8 +1,9 @@
 //! A program that runs TentHash in reverse to intentionally create hash
 //! collisions.
 //!
-//! The purpose of this is to clearly demonstrate that TentHash should *never*
-//! be used under adversarial circumstances.  It is not a cryptographic hash.
+//! The purpose of this is mainly for fun, but also to clearly demonstrate that
+//! TentHash shouldn't be used under adversarial circumstances.  It is not a
+//! cryptographic hash.
 
 fn main() {
     let collisions = generate_collisions([0u8; 20], 10);
@@ -75,9 +76,6 @@ fn unmix_state(state: &mut [u64; 4]) {
         state[1] = state[1].wrapping_sub(state[3]);
         state[0] = state[0].wrapping_sub(state[2]);
     }
-
-    state[0] ^= 0x2ea6370ac28ae776;
-    state[1] ^= 0x5abb00d71a7850cc;
 }
 
 #[cfg(test)]
@@ -94,9 +92,6 @@ mod test {
             [59, 40],
             [44, 13],
         ];
-
-        state[0] ^= 0x2ea6370ac28ae776;
-        state[1] ^= 0x5abb00d71a7850cc;
 
         for rot_pair in ROTATIONS.iter() {
             state[0] = state[0].wrapping_add(state[2]);

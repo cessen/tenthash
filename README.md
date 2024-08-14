@@ -34,7 +34,7 @@ Data throughput was measured single-threaded on an AMD Ryzen 5 7640U.  TentHash'
 
 | Name                                  | Digest size          | Data throughput<sup>2</sup> | Blocks per full diffusion<sup>1</sup> | Documented design rationale |
 |---------------------------------------|----------------------|-----------------------------|---------------------------------------|-----------------------------|
-| TentHash                              | 160 bits<sup>3</sup> | 8.5 GB/s                    | 1 block                               | Yes                         |
+| TentHash                              | 160 bits<sup>3</sup> | 9.0 GB/s                    | 1 block                               | Yes                         |
 | -                                     |                      |                             |                                       |                             |
 | xxHash3 (128-bit)                     | 128 bits             | 56.0 GB/s                   | Never                                 | No                          |
 | MeowHash v0.5                         | 128 bits             | 50.5 GB/s                   | ~6 blocks                             | No<sup>4</sup>              |
