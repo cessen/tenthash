@@ -10,13 +10,17 @@ use avalanche_chart::{
     generate_single_1_bit,
 };
 
+/// The number of mixing rounds to generate rotation constants for.
+/// `MIX_ROUNDS` pairs of rotation constants will be generated.
+const MIX_ROUNDS: usize = 7;
+
 /// An "item", representing one set of rotation constants for the mixing
 /// function.  It tracks the item's score, and contains an rng for making
 /// mutations (so we don't have to syncronize that across threads).
 #[derive(Debug, Clone)]
 struct Item {
     rng: WyRand,
-    rotations: [[u32; 2]; 7],
+    rotations: [[u32; 2]; MIX_ROUNDS],
     score: f64,
 
     /// Just for fun, give each item a unique ID so we can track them through
@@ -33,15 +37,13 @@ fn main() {
     let new_item = || {
         let mut rng = WyRand::new();
 
-        let rotations = [
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-            [rng.generate_range(1u32..64), rng.generate_range(1u32..64)],
-        ];
+        let rotations = {
+            let mut rotations = [[0u32; 2]; MIX_ROUNDS];
+            for i in 0..MIX_ROUNDS {
+                rotations[i] = [rng.generate_range(1u32..64), rng.generate_range(1u32..64)];
+            }
+            rotations
+        };
 
         // The new item's score is computed with the same number of rounds as in
         // the first and second phase, since those are the only two phases that
@@ -76,7 +78,7 @@ fn main() {
 
             let mut r = item.rotations;
             for _ in 0..item.rng.generate_range(1..=2usize) {
-                let i = item.rng.generate_range(0..7);
+                let i = item.rng.generate_range(0..MIX_ROUNDS);
                 let j = item.rng.generate_range(0..2);
 
                 let n = item.rng.generate_range(1..64);
@@ -189,7 +191,7 @@ fn main() {
     // ones.
     println!("\nPhase 4: optimizing winner");
     'foo: loop {
-        for i in (0..7).rev() {
+        for i in (0..MIX_ROUNDS).rev() {
             for j in (0..2).rev() {
                 let mut found_better = false;
                 for n in 1..64 {
@@ -222,9 +224,39 @@ fn main() {
     }
 
     println!(
-        "\n\nFinal: {}:\n    {:?}",
+        "\n\nFinal: {}:\n    {:?}\n",
         population[0].score, population[0].rotations
     );
+
+    let chart_random = compute_avalanche_chart(
+        generate_random,
+        |a, b| {
+            *b = *a;
+            mix_state(b, &population[0].rotations);
+        },
+        1 << 12,
+    );
+    chart_random.print_report();
+
+    let chart_counting = compute_avalanche_chart(
+        generate_counting,
+        |a, b| {
+            *b = *a;
+            mix_state(b, &population[0].rotations);
+        },
+        1 << 12,
+    );
+    chart_counting.print_report();
+
+    let chart_1_bit = compute_avalanche_chart(
+        generate_single_1_bit,
+        |a, b| {
+            *b = *a;
+            mix_state(b, &population[0].rotations);
+        },
+        256,
+    );
+    chart_1_bit.print_report();
 }
 
 /// Computes the score of a set of rotation constants, which is always between
