@@ -41,7 +41,7 @@ The internal hash state consists of four 64-bit unsigned integers, short-hand la
 - `D` = `0x894e29b9611eb173`
 
 
-### Adding the input data.
+### Xoring the input data.
 
 Input data is processed in 256-bit blocks.  **If the last block is less than 256 bits,** it is padded out to 256 bits with zeros and then processed as normal.
 
@@ -87,7 +87,7 @@ fn mix(hash_state):
 
 Where `<<<` is a bit-wise left rotation and addition is modulo 2<sup>64</sup>.
 
-As shown in the overview at the beginning of this document, the hash state is mixed once after adding each input block and twice during finalization.
+As shown in the overview at the beginning of this document, the hash state is mixed once after xoring each input block and twice during finalization.
 
 
 ### Producing the digest.
