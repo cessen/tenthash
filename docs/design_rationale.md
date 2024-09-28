@@ -32,7 +32,7 @@ The first property is that as long as the `mix` function is [bijective](https://
 
 This is a really useful property because it means it's impossible for a block to interact poorly with itself, and therefore we only need to consider the interactions *between* blocks when analyzing the chances of hash state collisions.
 
-The second property is that as long as the `mix` function [fully diffuses](https://en.wikipedia.org/wiki/Confusion_and_diffusion#Diffusion) the hash state, then the probability of a hash state collision being produced by altering two or more blocks is the same as the probability of finding duplicates in a random set of 256-bit numbers.  (At least, as long as the block alterations are not correlated with the `mix` function, which we'll discuss later.)
+The second property of the xor-and-mix loop is that as long as the `mix` function is a reasonable stand-in for a random permutation and [fully diffuses](https://en.wikipedia.org/wiki/Confusion_and_diffusion#Diffusion) the hash state, then the probability of a hash state collision being produced by altering two or more blocks is the same as the probability of finding duplicates in a random set of 256-bit numbers.
 
 This property is a little harder to develop intuition for, but I'll do my best to provide some with an informal "proof" of sorts:
 
@@ -153,16 +153,16 @@ The most obvious tweak is the different rotation constants, which will be discus
 
 First, the arrangement of the four integers in the inner loop is different.  This different arrangement makes SIMD implementations a tad more straightforward, which might be worthwhile on some platforms.
 
-Second, between rounds it is *A and B* that are swapped rather than C and D (the equivalent of B and D in Skein's arrangement).  This improves the instruction level parallelism of the mixing function.  Although in practice, modern compilers unroll the loop and elide the swaps anyway, so it largely ends up being moot.
+Second, between rounds it is *A and B* that are swapped rather than C and D (the equivalent of B and D in Skein's arrangement).  In some back-of-the-napkin analysis I did, this supposedly improves instruction level parallelism.  Although I don't feel confident about that, and in any case modern compilers unroll the loop and elide the swaps anyway, so it largely ends up being moot.
 
-However, the important thing to point out is that neither of these tweaks make any *functional* difference: if you also correspondingly rearrange Skein's rotation constants and the input block, you end up with identical mixing, just with the positions of the final integers swapped around.
+However, the important thing to point out is that neither of these tweaks make any *functional* difference: this mixing function is structurally equivalent to Skein's.
 
 
 ### The mixing function's rotation constants.
 
-*(For those who are curious about the details of how TentHash's rotation constants were generated, please see [the source code of the program that generated them](../supplemental/optimize_constants).  This section only discusses the high-level approach and its justification.)*
+*(For those who are curious about the details of how TentHash's rotation constants were generated, please see [the source code of the program that generated them](../supplemental/optimize_constants).  This section discusses what the constants were optimized for and why, as well as the results of that optimization, but not the specifics of the optimization approach itself.)*
 
-Skein's rotation constants are optimized to reach full diffusion of the whole hash state as quickly as possible.  This is because Skein fully diffuses the hash state *many times over* between input blocks, and its cryptographic strength (according to the authors—I have no cryptography expertise) benefits from maximizing the number of those full diffusions.
+Skein's rotation constants were optimized to reach full diffusion of the whole hash state as quickly as possible.  This is because Skein fully diffuses the hash state *many times over* between input blocks, and its cryptographic strength (according to the authors—I have no cryptography expertise) benefits from maximizing the number of those full diffusions.
 
 However, TentHash doesn't need to fully diffuse its hash state between input blocks.  Rather, it needs to diffuse the hash state to the equivalent of TentHash's 160-bit output size in as few rounds as possible.  The rationale behind this is that a hash cannot have a lower chance of collisions than its final output size permits.  Therefore, diffusing beyond that output size is wasted effort.  
 
@@ -176,7 +176,7 @@ The vertical axis is the input bit and the horizontal axis is the output bit.  E
 
 And that's what TentHash's constants have been optimized for: to make the lightest row as dark overall as possible within 7 rounds.
 
-Note that the above bias diagram was produced using random inputs.  With random inputs the bias graph is quite dark.  The summed inverse bias (i.e. 1 - bias) of the least-well-diffused input bit is 233 bits, and the Shannon entropy of the same is 249 bits.  Both far above 160 bits.
+Note that the above bias diagram was produced using random inputs.  With random inputs the bias graph is quite dark.  The summed inverse bias ("inverse bias" meaning `1.0 - bias`) of the least-well-diffused input bit is 233 bits, and the Shannon entropy of the same is 249 bits.  Both far above 160 bits.
 
 However, TentHash aims to be conservative about quality, and therefore the rotation constants weren't just optimized against random inputs, but also patterned inputs.  For example, an incrementing counter.  Here is the bias graph of the worst of those patterns:
 
@@ -188,50 +188,46 @@ Even the lowest of those numbers, 179, is comfortably above 160 bits.
 
 This does raise the question, however: can you accomplish enough diffusion with fewer than 7 rounds?
 
-It turns out that you can, depending on how conservative you want to be about quality.  For example, if you only consider random inputs (the overwhelmingly likely case if the rest of the hash is designed well) then 6 rounds is enough to achieve 160 bits of Shannon entropy.  However, when considering patterned inputs, even the best optimized set of 6-round constants I found couldn't reach even *128 bits* of Shannon entropy.  So I decided to bump it up to 7 rounds to be on the safe side.
+It turns out that you can, depending on how conservative you want to be about quality.  For example, if you only consider random inputs then 6 rounds is enough to achieve 160 bits of Shannon entropy.  However, when considering patterned inputs, even the best optimized set of 6-round constants I found couldn't reach even *128 bits* of Shannon entropy.  So I decided to bump it up to 7 rounds to be on the safe side.
 
 Admittedly, TentHash is almost certainly being over-conservative here, and it could get a bit of a speed boost if it switched to 6 rounds.  However, my rationale for 7 rounds is that having a healthy quality margin is good given TentHash's intended use cases.  Due to human factors, trying to ride the edge of quality for the sake of performance makes unintentional compromises on quality more likely, and I wanted to stay away from that.
 
 
 ### The initial hash state.
 
-TentHash's initial hash state constants are just random numbers, generated via [random.org](https://www.random.org/cgi-bin/randbyte?nbytes=32&format=h).  They have no special significance aside from now being part of the TentHash specification.
+TentHash's initial hash state constants are just random numbers, generated via [random.org](https://www.random.org/cgi-bin/randbyte?nbytes=32&format=h).  They have no special significance aside from now being part of the TentHash specification.  TentHash could have instead used an initial state of all zeros, but using gibberish protects against collisions in data that's generated via similar/related algorithms to TentHash's mixing function.
 
-TentHash could have instead used an initial state of all zeros, but using a gibberish state is essentially free in terms of performance and it protects against collisions in data generated via algorithms that are similar/related to TentHash's mixing function.
+The collision probabilities from the analysis in the "xor & mix loop" section are only valid insofar as the input data isn't correlated with the hash function.  So, as just one example, data generated via a process [similar or identical to running TentHash in reverse](../supplemental/collision/src/main.rs) can correlate the data with TentHash and therefore increase the likelihood of collisions among the data generated that way.
 
-The collision probabilities from the analysis in the "xor & mix loop" section are only valid insofar as the input data isn't correlated with the hash function.  So, for example, data generated via a process [similar or identical to running TentHash in reverse](../supplemental/collision/src/main.rs) can correlate the data with TentHash and therefore increase the likelihood of collisions among data generated that way.
+As unlikely as it is that someone would legitimately generate data in ways that correlate with TentHash, it's also easy to protect against by setting our initial state to gibberish.  TentHash's mixing function produces completely uncorrelated results (up to 160 bits, anyway) with just a single bit flip.  So by setting the initial state to gibberish, we ensure that *even data generated by exactly reversing TentHash's algorithm* will be completely uncorrelated with actual TentHash if even one bit of that initial state isn't reproduced exactly.
 
-As unlikely as it is that someone would legitimately generate data that way, it's also easy to protect against by setting our initial state to gibberish.  TentHash's mixing function produces completely uncorrelated results (up to 160 bits, anyway) with even just a single bit flip.  So by setting the initial state to gibberish, we ensure that *even data generated by exactly reversing TentHash's algorithm* will be completely uncorrelated with actual TentHash if even one bit of that initial state isn't reproduced exactly.
+Reproducing that initial state is easy to do on purpose, of course.  But again, TentHash isn't trying to protect against intentional collisions.  The thing we're protecting against with the gibberish initial state is someone coincidentally stumbling upon the same or similar algorithm as TentHash as a means of generating legitimate data.  If that does happen, they would *also* have to coincidentally choose the exact same gibberish numbers as TentHash in order to actually correlate, which has a 1 in 2<sup>256</sup> chance of happening.
 
-Reproducing that initial state is easy to do on purpose, of course.  But again, TentHash isn't trying to protect against intentional creation of collisions.  The thing we're protecting against with the gibberish initial state is someone coincidentally stumbling upon the same or similar algorithm as TentHash as a means of generating legitimate (presumably random) data.  If that does happen, they would *also* have to coincidentally choose the exact same gibberish numbers as TentHash, which has a 1 in 2<sup>256</sup> chance of happening, in order to actually correlate.
-
-This is *probably* unnecessary to protect against in practice.  But since it's basically free to do, there's no reason not to, and it gives us hard bounds on the probabilities of correlation rather than a hand-wavey "this *probably* won't happen".
+This is *probably* unnecessary to protect against in practice.  But since it's basically free to do, there's no reason not to, and it gives us hard bounds on the probabilities of correlation rather than a hand-wavey "this *probably* won't happen, because who would do that?"
 
 (I suppose there's also the very slim chance that someone sees TentHash and honestly thinks, "Running this exactly in reverse, including the gibberish initial state, looks like a great way to generate data!"  But at that point I think it's fair to call it malicious stupidity and categorize the resulting data as non-legitimate.)
 
 
 ### Incorporating the input length.
 
-Incorporating the message length into the hash accomplishes two important things, both of which have to do with zeros.
+Incorporating the message length into the hash accomplishes two things, both of which have to do with zeros.
 
-First: because the last block of a message is padded out to 256 bits with zeros, messages with the same prefix but ending in a different number of zeros could collide.  For example, consider the following two input messages:
+**First,** because the last block of a message is padded out to 256 bits with zeros, messages with the same prefix but ending in a different number of zeros could collide.  For example, consider the following two input messages:
 
 - `0xabc000`
 - `0xabc00000`
 
 Since both messages are shorter than 256-bits, they will both be padded to 256 bits with zeros (making them identical) before being added to the hash state.  This in turn would result in a hash collision.  This zero-extension weakness is a direct result of the zero-padding scheme.
 
-There are a couple of different ways to fix this weakness:
-1. Append a single `1` bit to the end of the message, resulting in `0xabc0008` and `0xabc000008` in the above example.
-2. Incorporate the message length into the hash.
+Xoring the message length into the hash state during finalization handily distinguishes such cases, addressing that issue.
 
-Both approaches are good, but the second approach is slightly simpler to implement, so TentHash opts for that approach and simply xors the message length into the hash state before finalization.
+**Second,** it protects against collisions due to the zero-sensitivity of the mixing function.  Recall that if the hash state is all zeros, then TentHash's mixing function effectively does nothing, leaving the state all zeros.  This means that if the hash state ever becomes all zeros then any number of all-zero blocks could be absorbed afterwards and there would be no change in the hash state.  In other words, in such a case it's not possible to distinguish how long that string of zero blocks is from just the xor-and-mix loop itself, and that in turn can create hash collisions.
 
-Second: it protects against collisions due to the zero-sensitivity of the mixing function.  Recall that if the hash state is all zeros, then TentHash's mixing function will leave it as all zeros.  This means that if the hash state becomes all zeros *and* there is a string of input blocks that are also all zeros, the hash state won't change regardless of the number of such blocks.
+Having said that, the chances of the hash state ever becoming zero in the first place are extremely low.  The only meaningful chance of that happening non-maliciously is someone legitimately putting TentHash's (now published) initial state at the very start of some piece of data, canceling out the hash state at the very beginning of the hashing process.  Outside of that, it's a 1 in 2<sup>256</sup> chance per input block, which even with an enormous number of blocks is a significantly smaller chance than an actual hash collision in a good 160-bit hash function.
 
-The chances of the hash state ever becoming zero are extremely low.  The only non-malicious chance of that really happening is someone legitimately putting TentHash's (now published) initial state as the very first part of some piece of data.  Outside of that, it's a 1 in 2<sup>256</sup> chance per block, which even with an enormous number of blocks is a significantly smaller chance than the final 160-bit digest itself colliding.
+So in practice, this *probably* isn't something we actually need to protect against.
 
-So in general, this *probably* isn't something we need to protect against in practice.  But by incorporating the message length we do anyway: if the start of the data is the initial hash state, which results in that state getting cancelled, and the data immediately following it is some number of all-zero blocks, then incorporating the message length distinguishes different lengths of that run of zero blocks, ensuring no hash collisions.
+Nevertheless, incorporating the message length distinguishes these "initial hash state as the first block of data, followed by N zero blocks" cases, which is the only way this issue could come up that isn't overwhelmingly improbable.
 
 
 ### Double-mixing during finalization.
@@ -250,9 +246,16 @@ Note that it only takes 9 rounds of mixing to fully diffuse the hash state, wher
 The above sections have broadly covered the rationale behind TentHash's design, with a focus on TentHash's quality.  This section answers other questions that people might have.
 
 
+### Q. Does TentHash pass the SMHasher test suite?
+
+Yes, trivially.  Including all power-of-two truncations down to 32 bits, the smallest SMHasher will test.  But with one qualification: TentHash isn't seedable, so it of course doesn't pass the seeding tests (e.g. the Perlin Noise test).  However, if you simply prepend the seed to the input data then TentHash passes the seeding tests as well.
+
+It's important to keep in mind that [passing SMHasher is insufficient evidence of quality for large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) like TentHash.  This entire document serves as much better evidence of quality than a passing score from SMHasher.  (Although if TentHash did *not* pass SMHasher that would indeed be extremely strong evidence that it *wasn't* high quality.)
+
+
 ### Q. Why is TentHash slower than some other non-cryptographic hashes?
 
-One reason is that TentHash is conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically at the digest sizes in question, so TentHash chooses not to take that risk, which makes it slower.
+One reason is that TentHash is conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically at the digest sizes in question, so TentHash chooses not to take that risk, which is one thing that makes it slower.
 
 Another factor is TentHash's choice to be simple and easily portable.  Many hashes are designed to maximally exploit SIMD processing, and others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
 
@@ -261,16 +264,9 @@ In other words, TentHash prioritizes quality and simplicity over maximum possibl
 Having said that, I'm sure it's possible to create a hash function that is both conservative about quality and simple while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
 
 
-### Q. Does TentHash pass the SMHasher test suite?
-
-Yes, trivially.  Including all power-of-two truncations down to 32 bits, the smallest SMHasher will test.  But with one qualification: TentHash isn't seedable, so it of course doesn't pass the seeding tests (e.g. the Perlin Noise test).  However, if you simply prepend the seed to the input data then TentHash passes the seeding tests as well.
-
-It's important to keep in mind that [passing SMHasher is insufficient evidence of quality for large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) like TentHash.  This entire document serves as much better evidence of quality than a passing score from SMHasher.  (Although if TentHash did *not* pass SMHasher that would indeed be extremely strong evidence that it *wasn't* high quality.)
-
-
 ### Q. Why isn't TentHash seedable?
 
-I'm not aware of any uses for seeding with TentHash's intended use case (non-cryptographic data fingerprints).
+I'm not aware of any uses for seeding with TentHash's intended use case (non-cryptographic message digests / fingerprints).
 
 Seeds are useful for cryptographic hashes in various circumstances, but as a non-cryptographic hash TentHash isn't appropriate in those circumstances.  Seeds can also be useful for non-cryptographic hashes with small (32 or 64-bit) output sizes in various applications, but TentHash isn't targeting those applications.
 
@@ -281,7 +277,7 @@ Additionally, if seeding really is needed for some application, it can be easily
 
 TentHash's original intended digest size was actually 128 bits, matching most other large-size non-cryptographic hashes.
 
-The reason for the 160-bit digest is simply that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the conservative robustness against collisions of TentHash's internal state.  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
+The reason for the 160-bit digest is simply that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the internal hash state's collision unlikelihood (according to the most conservative diffusion metric measured on the mixing function).  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
 
 
 ### Q. Why the 256-bit internal state size?
@@ -290,7 +286,7 @@ In my testing, 256 bits struck a good balance between having good performance an
 
 128 bits resulted in a slightly simpler implementation of the mix function, but also significantly reduced performance: with 256 bits you can process roughly twice as much data in the same time due to instruction-level parallelism.  Also, at 128 bits the mix function requires more rounds to achieve sufficient diffusion, so it would also be slower due to needing to bump the number of rounds up.
 
-512 bits, on the other hand, increased implementation complexity more than I wanted.  And although it certainly has the potential for performance gains with a wide SIMD implementation, a straightforward scalar implementation actually had worse performance than 256 bits in the (limited) testing I did.
+512 bits, on the other hand, increased implementation complexity more than I wanted.  And although it certainly has the potential for performance gains with a wide SIMD implementation, a straightforward scalar implementation actually had worse performance than 256 bits in the (admittedly limited) testing I did.
 
 So given TentHash's goals, 256 bits felt like it hit a good sweet spot: good performance with a simple implementation.
 
