@@ -48,7 +48,7 @@ fn main() {
         // The new item's score is computed with the same number of rounds as in
         // the first and second phase, since those are the only two phases that
         // create new items.
-        let score = compute_score_standard(&rotations, 256);
+        let score = compute_score(&rotations, 256);
 
         let prev_id = item_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
@@ -106,7 +106,7 @@ fn main() {
         std::io::stdout().flush().unwrap();
 
         population.par_iter_mut().for_each(|item| {
-            do_random_tweaks(&|rots| compute_score_standard(rots, 256), 1, item);
+            do_random_tweaks(&|rots| compute_score(rots, 256), 1, item);
         });
         population.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
 
@@ -131,7 +131,7 @@ fn main() {
         std::io::stdout().flush().unwrap();
 
         population.par_iter_mut().for_each(|item| {
-            do_random_tweaks(&|rots| compute_score_standard(rots, 256), 1, item);
+            do_random_tweaks(&|rots| compute_score(rots, 256), 1, item);
         });
         population.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
 
@@ -161,7 +161,7 @@ fn main() {
         std::io::stdout().flush().unwrap();
 
         population.par_iter_mut().for_each(|item| {
-            do_random_tweaks(&|rots| compute_score_standard(rots, 1 << 12), 1, item);
+            do_random_tweaks(&|rots| compute_score(rots, 1 << 12), 1, item);
         });
         population.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
 
@@ -203,7 +203,7 @@ fn main() {
 
                     let mut r = population[0].rotations;
                     r[i][j] = n;
-                    let new_score = compute_score_standard(&r, 1 << 12);
+                    let new_score = compute_score(&r, 1 << 12);
                     if new_score > population[0].score {
                         found_better = true;
                         population[0].rotations = r;
@@ -265,7 +265,7 @@ fn main() {
 /// The score is based on the diffusion of the least-well-diffused input
 /// bit.  It takes into account multiple input patterns (random, counting, and
 /// single-bit) using least squares.
-fn compute_score_standard(rotations: &[[u32; 2]], rounds: usize) -> f64 {
+fn compute_score(rotations: &[[u32; 2]], rounds: usize) -> f64 {
     let forward_mix = |a: &[u64; 4], b: &mut [u64; 4]| {
         *b = *a;
         mix_state(b, rotations);
@@ -300,102 +300,6 @@ fn compute_score_standard(rotations: &[[u32; 2]], rounds: usize) -> f64 {
     score
 }
 
-/// Unused.
-///
-/// This was an experiment to also optimize for diffusion when doing a round-trip
-/// unmix and mix (referred to as a "bounce" here) with a xor of the hash state
-/// between the unix and mix.  In the end, this didn't actually provide any
-/// meaningful benefit, and it ends up being difficult to balance (in terms of
-/// scoring) with the metrics that actually do matter.
-#[allow(dead_code)]
-fn compute_score_with_bounce(rotations: &[[u32; 2]], rounds: usize) -> f64 {
-    let forward_mix = |a: &[u64; 4], b: &mut [u64; 4]| {
-        *b = *a;
-        mix_state(b, rotations);
-    };
-
-    // Flipping almost any of the bits of the hash state between unmixing
-    // and mixing ends up being itself a fine mixing function with very good
-    // diffusion.
-    //
-    // However, there are precisely two bits that are stubborn.  These two
-    // mix functions test those two cases, so that they can be scored and
-    // optimized.
-    //
-    // In practice this didn't end up really mattering, though, since even
-    // though they're "stubborn", even they still end up diffusing the hash
-    // state *pretty* well.  And in TentHash's larger design, even if you
-    // discount these two bits as lost, a data-generating function would still
-    // need to guess 126 bits right, which is vanishingly unlikely to happen in
-    // practice.  See TentHash's design rationale document for more details.
-    let bounce_0_mix = |a: &[u64; 4], b: &mut [u64; 4]| {
-        *b = *a;
-        unmix_state(b, rotations);
-        b[0] ^= 1 << 63;
-        mix_state(b, rotations);
-    };
-    let bounce_1_mix = |a: &[u64; 4], b: &mut [u64; 4]| {
-        *b = *a;
-        unmix_state(b, rotations);
-        b[1] ^= 1 << 63;
-        mix_state(b, rotations);
-    };
-
-    let standard_chart_inputs: &[(
-        &(dyn Fn(usize, &mut [u64; 4]) + Sync),
-        &(dyn Fn(&[u64; 4], &mut [u64; 4]) + Sync),
-        usize,
-    )] = &[
-        (&generate_random, &forward_mix, rounds),
-        (&generate_counting, &forward_mix, rounds),
-        (&generate_counting_rev, &forward_mix, rounds),
-        (&generate_single_1_bit, &forward_mix, 256),
-    ];
-
-    let bounce_chart_inputs: &[(
-        &(dyn Fn(usize, &mut [u64; 4]) + Sync),
-        &(dyn Fn(&[u64; 4], &mut [u64; 4]) + Sync),
-        usize,
-    )] = &[
-        (&generate_random, &bounce_0_mix, rounds),
-        (&generate_counting, &bounce_0_mix, rounds),
-        (&generate_counting_rev, &bounce_0_mix, rounds),
-        (&generate_single_1_bit, &bounce_0_mix, 256),
-        (&generate_random, &bounce_1_mix, rounds),
-        (&generate_counting, &bounce_1_mix, rounds),
-        (&generate_counting_rev, &bounce_1_mix, rounds),
-        (&generate_single_1_bit, &bounce_1_mix, 256),
-    ];
-
-    let mut standard_score: f64 = 0.0;
-    for (gen, mix, rounds) in standard_chart_inputs {
-        let chart = compute_avalanche_chart(gen, mix, *rounds);
-
-        let a = 256.0 - chart.min_input_bit_diffusion();
-        let b = 256.0 - chart.min_input_bit_entropy();
-
-        standard_score -= (a * a) + (b * b);
-    }
-    let m = standard_chart_inputs.len() as f64 * 256.0 * 256.0 * 2.0;
-    standard_score += m;
-    standard_score /= m;
-
-    let mut bounce_score: f64 = 0.0;
-    for (gen, mix, rounds) in bounce_chart_inputs {
-        let chart = compute_avalanche_chart(gen, mix, *rounds);
-
-        let a = 256.0 - chart.min_input_bit_diffusion();
-        let b = 256.0 - chart.min_input_bit_entropy();
-
-        bounce_score -= (a * a) + (b * b);
-    }
-    let m = bounce_chart_inputs.len() as f64 * 256.0 * 256.0 * 2.0;
-    bounce_score += m;
-    bounce_score /= m;
-
-    (standard_score + bounce_score) / 2.0
-}
-
 /// Core TentHash mixing function, using `rotations` as the rotation constants.
 fn mix_state(state: &mut [u64; 4], rotations: &[[u32; 2]]) {
     for rot_pair in rotations.iter() {
@@ -405,17 +309,5 @@ fn mix_state(state: &mut [u64; 4], rotations: &[[u32; 2]]) {
         state[3] = state[3].rotate_left(rot_pair[1]) ^ state[1];
 
         state.swap(0, 1);
-    }
-}
-
-/// Inverse of `mix_state()` above.
-fn unmix_state(state: &mut [u64; 4], rotations: &[[u32; 2]]) {
-    for rot_pair in rotations.iter().rev() {
-        state.swap(0, 1);
-
-        state[3] = (state[3] ^ state[1]).rotate_right(rot_pair[1]);
-        state[2] = (state[2] ^ state[0]).rotate_right(rot_pair[0]);
-        state[1] = state[1].wrapping_sub(state[3]);
-        state[0] = state[0].wrapping_sub(state[2]);
     }
 }
