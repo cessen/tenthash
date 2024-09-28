@@ -21,7 +21,7 @@ TentHash was born out of a desire for a hash that fulfilled *all* of the followi
 3. **Documented & justified design.**  Its design should be properly documented, along with the rationale justifying that design.  People shouldn't have to guess at the rationale, and they shouldn't have to wade through sprawling, obtuse source code to figure out how to write an independent implementation.
 4. **Reasonably fast.**  It doesn't need to win any speed competitions, but its speed should be measured in GB/sec, not MB/sec, on typical hardware.
 
-At both the start of development and at the time of publication, I was unable to find any hashes that met all four of these criteria.
+When I started work on TentHash I was unable to find any hashes that met all four of these criteria, and TentHash aims to fill that gap.
 
 
 ## Comparison with other hashes.
@@ -92,7 +92,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
    Third, there are hash designs that can tolerate slower diffusion while still being optimal, so a listing of more than 1 block isn't *necessarily* a ding on quality.  In particular, I suspect that both Murmur3 and MeowHash may be notably better than their numbers here would suggest, although I don't know by how much.  Nevertheless, none of the listed non-cryptographic hashes have documentation to indicate or justify such a design.  Moreover, some of them definitely *don't* have such a design.
 
-   Fourth, the "never" case cannot, of course, be verified experimentally.  Rather, I verified by construction (e.g. by what operations are used, the size of the internal state, etc.) that they *cannot* fully diffuse.  I also tested them with 10000 blocks to sanity check.
+   Fourth, the "never" case cannot, of course, be verified experimentally.  Rather, I verified by construction (e.g. by what operations are used, the size of the internal state, etc.) that they *cannot* fully diffuse.  I also tested them up to 10000 blocks to sanity check.
 
    Fifth, I haven't listed numbers for the cryptographic hashes simply because I haven't bothered to verify them.  But it's safe to assume that they're either 1 block or are designed such that it doesn't matter.
 
@@ -100,7 +100,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 2. This does not reflect small-input performance, because TentHash's target use case is data identification/fingerprinting rather than hash maps.  TentHash's data throughput is relatively worse on small inputs.
 
-3. For non-cryptographic hashes, a 160-bit digest is unlikely to be meaningfully better than 128-bit in most realistic applications, and its listing here is for completeness, not to indicate an advantage over the other hashes.  See the design rationale document for how TentHash ended up at 160 bits.
+3. For non-cryptographic hashes, a 160-bit digest is unlikely to be meaningfully better than 128-bit in most realistic applications.  Its listing here is for completeness, not to indicate an advantage over the other hashes.  See the design rationale document for how TentHash ended up at 160 bits.
 
 4. MeowHash is still a work in progress, and thus insofar as it isn't yet recommending itself for real use, this doesn't count against it.
 
