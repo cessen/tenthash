@@ -227,9 +227,11 @@ There are a couple of different ways to fix this weakness:
 
 Both approaches are good, but the second approach is slightly simpler to implement, so TentHash opts for that approach and simply xors the message length into the hash state before finalization.
 
-Second: it protects against collisions due to the zero-sensitivity of the mixing function.
+Second: it protects against collisions due to the zero-sensitivity of the mixing function.  Recall that if the hash state is all zeros, then TentHash's mixing function will leave it as all zeros.  This means that if the hash state becomes all zeros *and* there is a string of input blocks that are also all zeros, the hash state won't change regardless of the number of such blocks.
 
-TODO: explain this further.
+The chances of the hash state ever becoming zero are extremely low.  The only non-malicious chance of that really happening is someone legitimately putting TentHash's (now published) initial state as the very first part of some piece of data.  Outside of that, it's a 1 in 2<sup>256</sup> chance per block, which even with an enormous number of blocks is a significantly smaller chance than the final 160-bit digest itself colliding.
+
+So in general, this *probably* isn't something we need to protect against in practice.  But by incorporating the message length we do anyway: if the start of the data is the initial hash state, which results in that state getting cancelled, and the data immediately following it is some number of all-zero blocks, then incorporating the message length distinguishes different lengths of that run of zero blocks, ensuring no hash collisions.
 
 
 ### Double-mixing during finalization.
