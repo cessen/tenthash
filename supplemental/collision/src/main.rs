@@ -1,7 +1,7 @@
 //! A program that runs TentHash in reverse to intentionally create hash
 //! collisions with specific target hash outputs.
 //!
-//! The purpose of this is magnly for fun, but also to clearly demonstrate that
+//! The purpose of this is mainly for fun, but also to clearly demonstrate that
 //! TentHash shouldn't be used under adversarial conditions.  It is not a
 //! cryptographic hash.
 
