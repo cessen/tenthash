@@ -1,30 +1,25 @@
-//! TentHash is a robust 160-bit non-cryptographic hash function.
+//! TentHash, a 160-bit *non-cryptographic* hash function.
 //!
-//! **WARNING:** TentHash's design is not yet finalized, and digest
-//! results may change before 1.0 is declared.
+//! **WARNING:** TentHash's design is not yet finalized, and digest results may
+//! change before 1.0 is declared.
 //!
-//! TentHash is intended to be used as a reasonably fast but (more
-//! importantly) high-quality checksum for data identification.
-//! Moreover, it has a simple design that is easy to understand and
-//! straightforward to write conforming implementations of.
+//! TentHash is a high-quality, reasonably fast, large-output hash.  Its target
+//! applications are data fingerprinting, checksums, content-addressable
+//! systems, and other use cases that don't tolerate hash collisions.
 //!
-//! TentHash is explicitly *not* intended to stand up to attacks.  Its
-//! otherwise strong collision resistance is only meaningful under
-//! non-adversarial conditions.  In other words, like a good tent, it
-//! will protect you from the elements, but will do very little to
-//! protect you from attackers.
+//! Importantly, TentHash is explicitly *not* intended to stand up to attacks.
+//! Its robustness against collisions is only meaningful under non-adversarial
+//! conditions.  In other words, like a good tent, it will protect you from the
+//! elements, but will do very little to protect you from attackers.
 //!
-//! This implementation should work on platforms of any endianness,
-//! but has only been tested on little endian platforms so far.
-//! Running the test suite on a big-endian platform can verify.
+//! This implementation should work on platforms of any endianness, but has only
+//! been tested on little endian platforms so far.  Running the test suite on a
+//! big-endian platform can verify.
 //!
 //! # Example
 //!
 //! ```rust
-//! # use tenthash::TentHasher;
-//! let mut hasher = TentHasher::new();
-//! hasher.update("Hello world!");
-//! let hash = hasher.finalize();
+//! let hash = tenthash::hash("Hello world!");
 //!
 //! assert_eq!(&hash[..4], &[0x15, 0x5f, 0xa, 0x35]);
 //! ```
@@ -34,7 +29,7 @@
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
 
-/// Computes the hash of a piece of data in one go.
+/// Computes the hash of a piece of data.
 pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
     let mut state = [
         0x5d6daffc4411a967,
@@ -76,6 +71,24 @@ pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
 }
 
 /// A streaming hasher, for processing data in progressive chunks.
+///
+/// # Example
+///
+/// ```rust
+/// # use tenthash::TentHasher;
+/// // As one chunk.
+/// let mut hasher1 = TentHasher::new();
+/// hasher1.update("Hello world!");
+/// let hash1 = hasher1.finalize();
+///
+/// // As multiple chunks.
+/// let mut hasher2 = TentHasher::new();
+/// hasher2.update("Hello");
+/// hasher2.update(" world!");
+/// let hash2 = hasher2.finalize();
+///
+/// assert_eq!(hash1, hash2);
+/// ```
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 #[repr(align(32))]
@@ -104,20 +117,6 @@ impl TentHasher {
     /// Appends data to the data stream being hashed.
     ///
     /// This can be called repeatedly to incrementally append more and more data.
-    ///
-    /// ```rust
-    /// # use tenthash::TentHasher;
-    /// // As one chunk.
-    /// let mut hasher1 = TentHasher::new();
-    /// hasher1.update("Hello world!");
-    ///
-    /// // As multiple chunks.
-    /// let mut hasher2 = TentHasher::new();
-    /// hasher2.update("Hello");
-    /// hasher2.update(" world!");
-    ///
-    /// assert_eq!(hasher1.finalize(), hasher2.finalize());
-    /// ```
     pub fn update(&mut self, data: impl AsRef<[u8]>) {
         let mut data = data.as_ref();
         self.message_length += data.len() as u64;
