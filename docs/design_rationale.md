@@ -253,22 +253,6 @@ Yes, trivially.  Including all power-of-two truncations down to 32 bits, the sma
 It's important to keep in mind that [passing SMHasher is insufficient evidence of quality for large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) like TentHash.  This entire document serves as much better evidence of quality than a passing score from SMHasher.  (Although if TentHash did *not* pass SMHasher that would indeed be extremely strong evidence that it *wasn't* high quality.)
 
 
-### Q. Why is TentHash slower than some other non-cryptographic hashes?
-
-One reason is that TentHash is conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically at the digest sizes in question, so TentHash chooses not to take that risk, which is one thing that makes it slower.
-
-Another factor is TentHash's choice to be simple and easily portable.  Many hashes are designed to maximally exploit SIMD processing, and others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
-
-In other words, TentHash prioritizes quality and simplicity over maximum possible performance, whereas other hashes often prioritize performance over either quality or simplicity (or sometimes both).  TentHash still cares about performance, of course.  Just not as the *top* priority.
-
-Having said that, I'm sure it's possible to create a hash function that is both conservative about quality and simple while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
-
-
-### Q. Why does TentHash incorporate the message length in bits rather than bytes?
-
-Because this way TentHash is well defined for messages of any bit length.  This has no practical benefit since all modern computing is based on 8-bit bytes, but it also has essentially no cost and it made me feel good.
-
-
 ### Q. Why isn't TentHash seedable?
 
 I'm not aware of any uses for seeding with TentHash's intended use case (non-cryptographic message digests / fingerprints).
@@ -278,11 +262,27 @@ Seeds are useful for cryptographic hashes in various circumstances, but as a non
 Additionally, if seeding really is needed for some application, it can be easily accomplished by simply prepending the seed to the input stream.  So there's no reason it needs to be part of the TentHash specification.
 
 
+### Q. Why does TentHash incorporate the message length in bits rather than bytes?
+
+Because this way TentHash is well defined for messages of any bit length.  This has no practical benefit since all modern computing is based on 8-bit bytes, but it also has essentially no cost and it made me feel good.
+
+
+### Q. Why is TentHash slower than some other non-cryptographic hashes?
+
+One reason is that TentHash is conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically for hashes with large digest sizes, so TentHash chooses not to take that risk, which is one thing that makes it slower.
+
+Another factor is TentHash's choice to be simple and easily portable.  Many hashes are designed to maximally exploit SIMD processing, and others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
+
+In other words, TentHash prioritizes quality and simplicity over maximum possible performance, whereas other hashes often prioritize performance over either quality or simplicity (or sometimes both).  TentHash still cares about performance, of course.  Just not as the *top* priority.
+
+Having said that, I'm sure it's possible to create a hash function that is both conservative about quality and simple while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
+
+
 ### Q. Why the 160-bit digest size?
 
 TentHash's original intended digest size was actually 128 bits, matching most other large-size non-cryptographic hashes.
 
-The reason for the 160-bit digest is simply that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the internal hash state's collision unlikelihood (according to the most conservative measure of diffusion of the mixing function).  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
+The reason for the 160-bit digest is that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the internal hash state's robustness against collisions (according to the most conservative measure of diffusion).  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
 
 
 ### Q. Why the 256-bit internal state size?
