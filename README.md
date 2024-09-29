@@ -16,7 +16,7 @@ Also like a good tent, it is compact (a full implementation is around 50 lines o
 
 TentHash was born out of a desire for a hash that fulfilled *all* of the following criteria:
 
-1. **Robust against collisions.**  For all practical purposes, it should be safe to assume that different pieces of (legitimate) data will never have colliding hashes.
+1. **Robust against collisions.**  For all practical purposes, it should be safe to assume that different pieces of (non-malicious) data will never have colliding hashes.
 2. **Simple and portable.**  It should be easy to understand and straightforward to write conforming (and performant) implementations, without need for special hardware instructions.
 3. **Documented & justified design.**  Its design should be properly documented, along with the rationale justifying that design.  People shouldn't have to guess at the rationale, and they shouldn't have to wade through sprawling, obtuse source code to figure out how to write an independent implementation.
 4. **Reasonably fast.**  It doesn't need to win any speed competitions, but its speed should be measured in GB/sec, not MB/sec, on typical hardware.
@@ -104,6 +104,6 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 4. MeowHash is still a work in progress, and thus insofar as it isn't yet recommending itself for real use, this doesn't count against it.
 
-5. CityHash128 and FarmHash128 use exactly the same construction for at least the part of the hash relevant to the diffusion metric, and also have the same data throughput.  (I *think* they're even just identical hashes, but I haven't bothered to properly confirm that.)
+5. CityHash128 and FarmHash128 are listed together because they use exactly the same construction for at least the part of the hash relevant to the diffusion metric, and also have the same data throughput.  (I *think* they're even just identical hashes, but I haven't bothered to properly confirm that.)
 
 6. As noted earlier, this is the speed of Blake3 in SMHasher.  The official implementation of Blake3 with default build flags is several times faster, at around 7 GB/sec.  That higher speed is achieved via hand-written assembly and SIMD intrinsics.
