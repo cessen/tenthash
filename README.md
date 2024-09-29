@@ -2,7 +2,7 @@
 
 A robust 160-bit *non-cryptographic* hash function.
 
-- [TentHash Specification v0.4](docs/specification.md) **WARNING:** TentHash's design is not yet finalized, and digest results may change before the specification is declared 1.0.
+- [TentHash Specification v0.4](docs/specification.md) **WARNING:** although it is very likely that this will become TentHash's final specification, there is still a chance it could change if issues are discovered before it is declared final.
 - [Design Rationale Document](docs/design_rationale.md)
 
 TentHash is a high-quality, reasonably fast, large-output hash.  Its target applications are data fingerprinting, checksums, content-addressable systems, and other use cases that don't tolerate hash collisions.

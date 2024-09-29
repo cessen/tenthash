@@ -4,6 +4,7 @@ This document defines the TentHash hash function.  It aims to be concise and eas
 
 **WARNING:** this specification may change in backwards-incompatible ways prior to version 1.0.  After 1.0 is declared, only changes that do not alter the hash output (such as clarifications and better prose) will be made.  There will never be a 2.0.
 
+**WARNING:** although it is very likely that this version of the spec will become TentHash's final specification, there is still a chance it could change if issues are discovered before it is declared final.  When it is declared final, the version number will be removed, and after that point only changes that do not alter the hash output (such as clarifications and better prose) will be made.
 
 ## Overview
 
@@ -63,7 +64,7 @@ Once all input data has been processed, the length of the input data **in bits**
 A ^= data_length_in_bits
 ```
 
-Note: conforming implementations of TentHash are **not** required to handle data streams longer than 2<sup>64</sup>-1 bits.  However, implementations that wish to do so should simply wrap `data_length_in_bits` when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.
+Note: conforming implementations of TentHash are **not** required to handle data streams longer than 2<sup>64</sup>-1 bits.  However, implementations that wish to do so must wrap `data_length_in_bits` when exceeding 2<sup>64</sup>-1.  Or in other words, `A` should be xored with the data length in bits modulo 2<sup>64</sup>.
 
 
 ### Mixing the hash state.
