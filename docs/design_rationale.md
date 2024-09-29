@@ -264,6 +264,11 @@ In other words, TentHash prioritizes quality and simplicity over maximum possibl
 Having said that, I'm sure it's possible to create a hash function that is both conservative about quality and simple while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
 
 
+### Q. Why does TentHash incorporate the message length in bits rather than bytes?
+
+Because this way TentHash is well defined for messages of any bit length.  This has no practical benefit since all modern computing is based on 8-bit bytes, but it also has essentially no cost and it made me feel good.
+
+
 ### Q. Why isn't TentHash seedable?
 
 I'm not aware of any uses for seeding with TentHash's intended use case (non-cryptographic message digests / fingerprints).
