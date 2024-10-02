@@ -188,9 +188,9 @@ Even the lowest of those numbers, 179, is comfortably above 160 bits.
 
 This does raise the question, however: can you accomplish enough diffusion with fewer than 7 rounds?
 
-It turns out that you can, depending on how conservative you want to be about quality.  For example, if you only consider random inputs then 6 rounds is enough to achieve 160 bits of Shannon entropy.  However, when considering patterned inputs, even the best optimized set of 6-round constants I found couldn't even reach 128 bits of Shannon entropy.  So I decided to bump it up to 7 rounds to be on the safe side.
+It turns out that you can, depending on how conservative you want to be about quality.  For example, if you only consider random inputs then 6 rounds is enough to achieve 160 bits of Shannon entropy.  However, when considering patterned inputs, even the best optimized set of 6-round constants I found couldn't reach 128 bits of Shannon entropy.  So I decided to bump it up to 7 rounds to be on the safe side.
 
-Admittedly, TentHash is almost certainly being over-conservative here, and it could get a bit of a speed boost if it switched to 6 rounds.  However, my rationale for 7 rounds is that having a healthy quality margin is good given TentHash's intended use cases.  Due to human factors, trying to ride too close to the edge of quality for the sake of performance makes unintentional compromises on quality more likely, and I wanted to stay away from that.
+TentHash is perhaps being over-conservative here, and could get a bit of a speed boost if it switched to 6 rounds.  However, my rationale for 7 rounds is that having a healthy quality margin is good given TentHash's intended use cases.  Due to human factors, trying to ride too close to the edge of quality for the sake of performance makes unintentional compromises on quality more likely, and I wanted to stay away from that.
 
 
 ### The initial hash state.
@@ -269,7 +269,7 @@ Because this way TentHash is well defined for messages of any bit length.  This 
 
 ### Q. Why is TentHash slower than some other non-cryptographic hashes?
 
-One reason is that TentHash is conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically for hashes with large digest sizes, so TentHash chooses not to take that risk, which is one thing that makes it slower.
+One reason is that TentHash tries to be conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically for hashes with large digest sizes, so TentHash chooses not to take that risk, which is one thing that makes it slower.
 
 Another factor is TentHash's choice to be simple and easily portable.  Many hashes are designed to maximally exploit SIMD processing, and others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
 
@@ -282,7 +282,7 @@ Having said that, I'm sure it's possible to create a hash function that is both 
 
 TentHash's original intended digest size was actually 128 bits, matching most other large-size non-cryptographic hashes.
 
-The reason for the 160-bit digest is that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the internal hash state's robustness against collisions (according to the most conservative measure of diffusion).  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
+The reason for the 160-bit digest is that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the internal hash state's robustness against collisions (according to the most conservative metric of diffusion that was measured).  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
 
 
 ### Q. Why the 256-bit internal state size?
@@ -291,7 +291,7 @@ In my testing, 256 bits struck a good balance between having good performance an
 
 128 bits resulted in a slightly simpler implementation of the mix function, but also significantly reduced performance: with 256 bits you can process roughly twice as much data in the same time due to instruction-level parallelism.  Also, at 128 bits the mix function requires more rounds to achieve sufficient diffusion, so it would also be slower due to needing to bump the number of rounds up.
 
-512 bits, on the other hand, increased implementation complexity more than I wanted.  And although it certainly has the potential for performance gains with a wide SIMD implementation, a straightforward scalar implementation actually had worse performance than 256 bits in the (admittedly limited) testing I did.
+512 bits, on the other hand, increased implementation complexity more than I wanted.  And although it certainly has the potential for significant performance gains with a wide SIMD implementation, a scalar implementation that mixed the entire hash state together was slower in my testing, and an independent-lane-based approach with scalar code was only marginally faster.
 
 So given TentHash's goals, 256 bits felt like it hit a good sweet spot: good performance with a simple implementation.
 
@@ -307,11 +307,11 @@ I decided against this because of TentHash's intended application (message diges
 
 Some fast hashes do indeed take this approach, and it works really well for improving performance: since the lanes never interact until the end, you can run them perfectly in parallel.
 
-However, doing that effectively increases the collision probability of the whole hash to that of a single lane.  For example, if your lane size is only 64-bits wide, then using independent lanes results in a hash with a collision probability conservatively equivalent to a mere 64-bit hash, regardless of how the lanes are combined at the end.  So with small lane sizes this approach isn't appropriate for a hash with TentHash's goals.
+However, TentHash already takes good advantage of instruction-level parallelism in its mix function, such that it's already benefiting from most of the performance gains you would get from two 128-bit lanes.  Moreover, making independent lanes too small can significantly harm hash quality.  For example, if each lane is only 64-bits wide then the full hash will have a collision probability conservatively equivalent to that same 64-bit size, regardless of how the lanes are combined at the end.  So with small lane sizes this approach isn't appropriate for a hash with TentHash's quality goals.
 
-Using 128-bit lanes would be fine.  However, the mix function requires more rounds for sufficient diffusion at that size.  Combined with the fact that the 256-bit version is already mostly parallelized by instruction-level parallelism on modern CPUs, it's very likely that two lanes with 256-bit SIMD would actually be slower (and some limited testing did seem to bare that out), and it's *certainly* slower with a straightforward scalar implementation.  512-bit SIMD would likely be faster, but that doesn't seem worth the additional complexity given TentHash's goals.
+Using two 256-bit lanes with 512-bit SIMD certainly has the potential for performance gains.  However, as mentioned in the answer to the question further up about hash state size, that also complicates the implementation and only provides marginal gains for more straightforward scalar code.
 
-Lastly, keeping things to a single lane simplifies the implementation outside of the mix function as well because you don't need an extra step to combine the lanes at the end.
+So given TentHash's goals, sticking to its simpler 256-bit implementation without lanes seemed the most appropriate.
 
 
 ### Q. Why doesn't TentHash use multiple threads for faster hashing?
