@@ -157,6 +157,8 @@ Second, *A and B* are swapped at the end of each round rather than C and D (the 
 
 In any case, the important thing to point out is that neither of these tweaks make any *functional* difference: this mixing function is structurally equivalent to Skein's.
 
+To provide additional confidence in this mixer construction, I also implemented a [range of statistical tests on a reduced-size version of it](../supplemental/tiny_mixer), including collision tests, a bit independence criterion test, and a higher-order avalanche test.  These reduced-size tests are not proof that all the same properties hold for the full-size variant, but they are good evidence that the general construction is sound and has good statistical properties beyond just basic diffusion.
+
 
 ### The mixing function's rotation constants.
 
@@ -205,7 +207,9 @@ Reproducing that initial state is easy to do on purpose, of course.  But again, 
 
 This is *probably* unnecessary to protect against in practice.  But since it's basically free to do, there's no reason not to, and it gives us hard bounds on the probabilities of correlation rather than a hand-wavey "this *probably* won't happen, because who would do that?"
 
-(I suppose there's also the very slim chance that someone sees TentHash and honestly thinks, "Running this exactly in reverse, including the gibberish initial state, looks like a great way to generate data!"  But at that point I think it's fair to call it malicious stupidity and categorize the resulting data as non-legitimate.)
+(I suppose there's also the very slim chance that someone sees TentHash and honestly thinks, "Running this exactly in reverse, including the gibberish initial state, looks like a great way to generate data!"  But at that point I think it's fair to call it malicious stupidity and categorize the resulting data as non-legitimate.  Additionally, such a person would only be hurting themselves, since data generated that way would only have an increased chance of colliding with other data generated in the same way, not with other data in general.)
+
+An additional side benefit of the gibberish initial state is that (aside from the chance of someone placing TentHash's initial state at the start of some data for a legitimate reason) it also makes it overwhelmingly likely that TentHash's mixing function will operate at the higher diffusion level it gets with random inputs (as discussed in the section on rotation constants) throughout the entire hashing process.  This is not necessary, but it does provide even more quality margin under almost all realistic circumstances, which is nice.
 
 
 ### Incorporating the input length.
