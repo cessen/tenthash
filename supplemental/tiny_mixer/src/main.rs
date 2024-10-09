@@ -6,10 +6,27 @@
 
 mod stats;
 
-use stats::{
-    compute_stats, generate_bit_combinations, generate_bit_combinations_inv, generate_counting,
-    generate_counting_rev, generate_random, generate_single_1_bit,
-};
+use stats::{bit_combinations, compute_stats, generate_random};
+
+fn main() {
+    for pattern in PATTERNS {
+        println!("\n{}:", pattern.name);
+        collision_test(
+            pattern.collision_log_population,
+            1 << pattern.collision_log_population,
+            pattern.gen_function,
+        );
+        let chart = compute_stats(
+            pattern.gen_function,
+            |a, b| {
+                *b = *a;
+                mix(b);
+            },
+            pattern.avalanche_rounds,
+        );
+        chart.print_report();
+    }
+}
 
 type State = u32;
 
@@ -42,85 +59,76 @@ fn mix(state: &mut State) {
     *state = unsafe { std::mem::transmute(bytes) };
 }
 
-fn main() {
-    println!("\nRandom:");
-    collision_test(20, 1 << 20, generate_random);
-    let chart_0 = compute_stats(
-        generate_random,
-        |a, b| {
-            *b = *a;
-            mix(b);
-        },
-        1 << 16,
-    );
-    chart_0.print_report();
-
-    println!("\nCounting:");
-    collision_test(20, 1 << 20, generate_counting);
-    let chart_1 = compute_stats(
-        generate_counting,
-        |a, b| {
-            *b = *a;
-            mix(b);
-        },
-        1 << 16,
-    );
-    chart_1.print_report();
-
-    println!("\nCounting bit-reversed:");
-    collision_test(20, 1 << 20, generate_counting_rev);
-    let chart_2 = compute_stats(
-        generate_counting_rev,
-        |a, b| {
-            *b = *a;
-            mix(b);
-        },
-        1 << 16,
-    );
-    chart_2.print_report();
-
-    println!("\nBit combinations:");
-    collision_test(20, 1 << 20, generate_bit_combinations);
-    let chart_2 = compute_stats(
-        generate_bit_combinations,
-        |a, b| {
-            *b = *a;
-            mix(b);
-        },
-        1 << 16,
-    );
-    chart_2.print_report();
-
-    println!("\nBit combinations inverted:");
-    collision_test(20, 1 << 20, generate_bit_combinations_inv);
-    let chart_2 = compute_stats(
-        generate_bit_combinations_inv,
-        |a, b| {
-            *b = *a;
-            mix(b);
-        },
-        1 << 16,
-    );
-    chart_2.print_report();
-
-    println!("\nSingle bit:");
-    // No collision test because due to this generator's nature we can't get
-    // enough buckets to be meaningful.
-    // collision_test(5, 32, generate_single_1_bit);
-    let chart_3 = compute_stats(
-        generate_single_1_bit,
-        |a, b| {
-            *b = *a;
-            mix(b);
-        },
-        32,
-    );
-    chart_3.print_report();
+struct BitPattern<'a> {
+    name: &'a str,
+    gen_function: &'a dyn Fn(usize) -> State,
+    avalanche_rounds: usize,
+    collision_log_population: usize,
 }
+
+// Note that by changing the counting and bit-combo rounds, you're also changing
+// what is being tested to some extent.  With the random rounds, on the other
+// hand, cranking it up mainly just reduces variance.
+const RANDOM_ROUNDS: usize = 1 << 14;
+const COUNTING_ROUNDS: usize = 1 << 12;
+const BIT_COMBO_ROUNDS: usize = 1 << 12;
+
+const PATTERNS: &[BitPattern] = &[
+    BitPattern {
+        name: "Random",
+        gen_function: &generate_random,
+        avalanche_rounds: RANDOM_ROUNDS,
+        collision_log_population: 20,
+    },
+    BitPattern {
+        name: "Counting",
+        gen_function: &|i| i as State,
+        avalanche_rounds: COUNTING_ROUNDS,
+        collision_log_population: 20,
+    },
+    BitPattern {
+        name: "Counting bit-reversed",
+        gen_function: &|i| (i as State).reverse_bits(),
+        avalanche_rounds: COUNTING_ROUNDS,
+        collision_log_population: 20,
+    },
+    BitPattern {
+        name: "Bit combinations",
+        gen_function: &bit_combinations,
+        avalanche_rounds: BIT_COMBO_ROUNDS,
+        collision_log_population: 20,
+    },
+    BitPattern {
+        name: "Bit combinations bit-reversed",
+        gen_function: &|i| bit_combinations(i).reverse_bits(),
+        avalanche_rounds: BIT_COMBO_ROUNDS,
+        collision_log_population: 20,
+    },
+    BitPattern {
+        name: "Bit combinations inverted",
+        gen_function: &|i| !bit_combinations(i),
+        avalanche_rounds: BIT_COMBO_ROUNDS,
+        collision_log_population: 20,
+    },
+    BitPattern {
+        name: "single-bit",
+        gen_function: &|i| 1 << i,
+
+        // NOTE: because this test has a small, fixed number of rounds by its
+        // nature, the generated statistics should be interpreted a little
+        // differently. In particular, even a very good mixing function is
+        // unlikely to achieve "perfect" avalanche or BIC by this measure,
+        // purely because it's impossible to collect enough samples to reduce
+        // variance enough.
+        avalanche_rounds: 32,
+
+        collision_log_population: 20,
+    },
+];
 
 fn collision_test<F>(log_buckets: usize, item_count: usize, gen: F)
 where
-    F: Fn(usize, &mut State),
+    F: Fn(usize) -> State,
 {
     let bucket_count = 1 << log_buckets;
     let mut buckets_low_bits = vec![0u32; bucket_count];
@@ -128,8 +136,7 @@ where
     let mut buckets_combined_bits = vec![0u32; bucket_count];
 
     for i in 0..item_count {
-        let mut state = 0;
-        gen(i, &mut state);
+        let mut state = gen(i);
 
         mix(&mut state);
         let n = state as usize;

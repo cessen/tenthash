@@ -10,7 +10,7 @@ const SIZE: usize = std::mem::size_of::<Bits>() * 8;
 // forewarned that the time and memory requirements rapidly increase.  `ORDER =
 // 1` is a standerd avalanche test.
 const HIGHER_ORDER_SIZE: usize = {
-    const ORDER: usize = 3;
+    const ORDER: usize = 4;
 
     // The below amounts to just `(1..=ORDER).map(|i| binomial(32, i)).sum()`,
     // but all the niceties that allow this to be written better (even for
@@ -276,13 +276,13 @@ impl Stats {
 /// - `rounds`: how many test rounds to perform to produce the estimated chart.
 pub fn compute_stats<F1, F2>(generate_input: F1, mix: F2, rounds: usize) -> Stats
 where
-    F1: Fn(usize, &mut Bits) + Sync,
-    F2: Fn(&Bits, &mut Bits) + Sync,
+    F1: Fn(usize) -> Bits,
+    F2: Fn(&Bits, &mut Bits),
 {
     let mut chart = Stats::new();
 
     for round in 0..rounds {
-        if (round % 32) == 0 {
+        if (round % (10000 / HIGHER_ORDER_SIZE).max(1)) == 0 {
             use std::io::Write;
             print!(
                 "\r                                \rRound {} / {}",
@@ -290,11 +290,9 @@ where
             );
             let _ = std::io::stdout().flush();
         }
-        let mut input = 0usize as Bits;
+
+        let input = generate_input(round);
         let mut output = 0usize as Bits;
-
-        generate_input(round, &mut input);
-
         mix(&input, &mut output);
 
         // Avalanche.
@@ -366,7 +364,7 @@ pub fn p_to_entropy(p: f64) -> f64 {
 
 /// Generates a random data block.
 #[allow(dead_code)]
-pub fn generate_random(seed: usize, out: &mut Bits) {
+pub fn generate_random(seed: usize) -> Bits {
     fn mix64(mut n: u64) -> u64 {
         // Break zero sensitivity.
         n ^= 0x7be355f7c2e736d2;
@@ -382,41 +380,7 @@ pub fn generate_random(seed: usize, out: &mut Bits) {
         n
     }
 
-    let mut rng = WyRand::new_seed(mix64(seed as u64));
-    *out = rng.generate::<Bits>();
-}
-
-/// Generates a data block with all zero bits except one.
-#[allow(dead_code)]
-pub fn generate_single_1_bit(seed: usize, out: &mut Bits) {
-    *out = 1 << (seed % SIZE) as Bits;
-}
-
-/// Generates all combinations of setting no bits, then one bit, then two
-/// bits, and so on, in that order.
-#[allow(dead_code)]
-pub fn generate_bit_combinations(seed: usize, out: &mut Bits) {
-    *out = bit_combinations(seed);
-}
-
-/// Bit-wise-not of `generated_bit_combinations()`.
-#[allow(dead_code)]
-pub fn generate_bit_combinations_inv(seed: usize, out: &mut Bits) {
-    *out = !bit_combinations(seed);
-}
-
-/// Generates a data block with the lowest bits simply counting up as an
-/// incrementing integer.
-#[allow(dead_code)]
-pub fn generate_counting(seed: usize, out: &mut Bits) {
-    *out = seed as u32;
-}
-
-/// Generates a data block with the *highest* bits simply counting up as an
-/// incrementing integer, with reversed bits.
-#[allow(dead_code)]
-pub fn generate_counting_rev(seed: usize, out: &mut Bits) {
-    *out = (seed as Bits).reverse_bits();
+    WyRand::new_seed(mix64(seed as u64)).generate::<Bits>()
 }
 
 /// Computes the nth bit combination, ordered by first no set bits, then all
