@@ -157,7 +157,7 @@ Second, *A and B* are swapped at the end of each round rather than C and D (the 
 
 In any case, the important thing to point out is that neither of these tweaks make any *functional* difference: this mixing function is structurally equivalent to Skein's.
 
-To provide additional confidence in this mixer construction, I also implemented a [range of statistical tests on a reduced-size version of it](../supplemental/tiny_mixer), including collision tests, a bit independence criterion test, and a higher-order avalanche test.  These reduced-size tests are not proof that all the same properties hold for the full-size variant, but they are good evidence that the general construction is sound and has good statistical properties beyond just basic diffusion.
+To provide additional confidence in this mixer construction, I also implemented a [range of statistical tests on a reduced-size version of it](../supplemental/tiny_mixer), including collision tests, a bit independence criterion test, and a higher-order avalanche test (up to order 4).  These reduced-size tests are not proof that all the same properties hold for the full-size variant, but they are good evidence that the general construction is sound and has good statistical properties beyond just basic diffusion.
 
 
 ### The mixing function's rotation constants.
@@ -268,18 +268,18 @@ Additionally, if seeding really is needed for some application, it can be easily
 
 ### Q. Why does TentHash incorporate the message length in bits rather than bytes?
 
-Because this way TentHash is well defined for messages of any bit length.  This has no practical benefit since all modern computing is based on 8-bit bytes, but it also has essentially no cost and it made me feel good.
+Because this way TentHash is well defined for messages of any bit length.  This has basically no practical benefit since all modern computing is based on 8-bit bytes, but it also has essentially no cost and it made me feel good.
 
 
 ### Q. Why is TentHash slower than some other non-cryptographic hashes?
 
-One reason is that TentHash tries to be conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically for hashes with large digest sizes, so TentHash chooses not to take that risk, which is one thing that makes it slower.
+The biggest factor is TentHash's choice to be simple and easily portable.  For example, many hashes are designed to maximally exploit SIMD processing and/or use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware, but it's at the expense of complexity and/or easy portability.
 
-Another factor is TentHash's choice to be simple and easily portable.  Many hashes are designed to maximally exploit SIMD processing, and others use special AES or CRC hardware instructions.  This is a fine design choice, and certainly helps them be fast on modern hardware.  But it's at the expense of complexity and/or easy portability.
+Another reason is that TentHash tries to be conservative in its design with respect to hash quality.  Many other hashes, whether intentionally or unintentionally, make potential concessions on hash quality in favor of speed.  Some of those concessions *may* be okay, but they also may negatively impact robustness against collisions.  It's unfortunately not feasible to directly test that empirically for hashes with large digest sizes, so TentHash chooses not to take that risk, which also impacts its speed.
 
 In other words, TentHash prioritizes quality and simplicity over maximum possible performance, whereas other hashes often prioritize performance over either quality or simplicity (or sometimes both).  TentHash still cares about performance, of course.  Just not as the *top* priority.
 
-Having said that, I'm sure it's possible to create a hash function that is both conservative about quality and simple while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
+Having said that, I'm sure it's possible to create a hash function that is simple, portable, and conservative about quality while also being faster than TentHash.  I make no claim that TentHash has somehow found the peak of that design space, and I am looking forward to seeing other (properly documented and justified!) hashes appear in the future that are better than TentHash in this space.
 
 
 ### Q. Why the 160-bit digest size?
