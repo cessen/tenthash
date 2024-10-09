@@ -11,11 +11,13 @@ use stats::{bit_combinations, compute_stats, generate_random};
 fn main() {
     for pattern in PATTERNS {
         println!("\n{}:", pattern.name);
-        collision_test(
-            pattern.collision_log_population,
-            1 << pattern.collision_log_population,
-            pattern.gen_function,
-        );
+        if pattern.collision_log_population > 0 {
+            collision_test(
+                pattern.collision_log_population,
+                1 << pattern.collision_log_population,
+                pattern.gen_function,
+            );
+        }
         let chart = compute_stats(
             pattern.gen_function,
             |a, b| {
@@ -122,7 +124,7 @@ const PATTERNS: &[BitPattern] = &[
         // variance enough.
         avalanche_rounds: 32,
 
-        collision_log_population: 20,
+        collision_log_population: 0,
     },
 ];
 
