@@ -2,7 +2,27 @@ use nanorand::{Rng, WyRand};
 
 type Bits = u32;
 const SIZE: usize = std::mem::size_of::<Bits>() * 8;
-const DUAL_SIZE: usize = 528;
+
+// Size needed for the higher-order avalanche test.
+//
+// This is set to measure avalanche up to order 3 (flipping all combinations of
+// up to 3 bits).  You can set `ORDER` higher to test even higher orders, but be
+// forewarned that the time and memory requirements rapidly increase.  `ORDER =
+// 1` is a standerd avalanche test.
+const HIGHER_ORDER_SIZE: usize = {
+    const ORDER: usize = 3;
+
+    // The below amounts to just `(1..=ORDER).map(|i| binomial(32, i)).sum()`,
+    // but all the niceties that allow this to be written better (even for
+    // loops!) aren't allowed in a const context yet.
+    let mut combo_count = 0;
+    let mut i = 1;
+    while i <= ORDER {
+        combo_count += binomial(32, i);
+        i += 1;
+    }
+    combo_count
+};
 
 pub struct Stats {
     // The number of samples accumulated.  Or put another way, the number of
@@ -22,7 +42,7 @@ pub struct Stats {
     //
     // This is basically just a more advanced avalanche chart, that accounts for
     // one additional higher-order avalanche check.
-    pub avalanche_chart: [[u32; SIZE]; DUAL_SIZE],
+    pub avalanche_chart: Vec<[u32; SIZE]>,
 }
 
 impl Stats {
@@ -30,7 +50,7 @@ impl Stats {
         Self {
             sample_count: 0,
             bic_chart: [[[0; 4]; SIZE * (SIZE - 1)]; SIZE],
-            avalanche_chart: [[0; SIZE]; DUAL_SIZE],
+            avalanche_chart: vec![[0; SIZE]; HIGHER_ORDER_SIZE],
         }
     }
 
@@ -53,7 +73,7 @@ impl Stats {
             .sum()
     }
 
-    /// The total average bias of all in-out bit pairs.
+    /// The total average bias of all output bits.
     pub fn average_bias(&self) -> f64 {
         let norm = 1.0 / self.sample_count as f64;
 
@@ -66,7 +86,7 @@ impl Stats {
         bias_sum / self.avalanche_chart.iter().flatten().count() as f64
     }
 
-    /// The minimum bias of all in-out bit pairs.
+    /// The minimum bias of all output bits.
     pub fn min_bias(&self) -> f64 {
         let norm = 1.0 / self.sample_count as f64;
 
@@ -78,7 +98,7 @@ impl Stats {
         min_bias
     }
 
-    /// The maximum bias of all in-out bit pairs.
+    /// The maximum bias of all output bits.
     pub fn max_bias(&self) -> f64 {
         let norm = 1.0 / self.sample_count as f64;
 
@@ -91,8 +111,8 @@ impl Stats {
     }
 
     /// The diffusion (computed as sum of inverse bias) of the least-well
-    /// diffused input bit.
-    pub fn min_input_bit_diffusion(&self) -> f64 {
+    /// diffused input bit combination.
+    pub fn min_input_bit_combo_diffusion(&self) -> f64 {
         let mut min_diffusion = f64::INFINITY;
         for i in 0..self.avalanche_chart.len() {
             min_diffusion = min_diffusion.min(self.row_diffusion(i));
@@ -101,8 +121,8 @@ impl Stats {
     }
 
     /// The average diffusion (computed as sum of inverse bias) of all input
-    /// bits.
-    pub fn avg_input_bit_diffusion(&self) -> f64 {
+    /// bit combinations.
+    pub fn avg_input_bit_combo_diffusion(&self) -> f64 {
         let mut avg_diffusion = 0.0f64;
         for i in 0..self.avalanche_chart.len() {
             avg_diffusion += self.row_diffusion(i);
@@ -111,8 +131,8 @@ impl Stats {
     }
 
     /// The diffusion (computed as sum of inverse bias) of the most diffused
-    /// input bit.
-    pub fn max_input_bit_diffusion(&self) -> f64 {
+    /// input bit combination.
+    pub fn max_input_bit_combo_diffusion(&self) -> f64 {
         let mut max_diffusion = 0.0f64;
         for i in 0..self.avalanche_chart.len() {
             max_diffusion = max_diffusion.max(self.row_diffusion(i));
@@ -120,9 +140,9 @@ impl Stats {
         max_diffusion
     }
 
-    /// Same as `min_input_bit_diffusion()` except computed with Shannon
+    /// Same as `min_input_bit_combo_diffusion()` except computed with Shannon
     /// entropy.
-    pub fn min_input_bit_entropy(&self) -> f64 {
+    pub fn min_input_bit_combo_entropy(&self) -> f64 {
         let mut min_entropy = f64::INFINITY;
         for i in 0..self.avalanche_chart.len() {
             min_entropy = min_entropy.min(self.row_entropy(i));
@@ -130,9 +150,9 @@ impl Stats {
         min_entropy
     }
 
-    /// Same as `avg_input_bit_diffusion()` except computed with Shannon
+    /// Same as `avg_input_bit_combo_diffusion()` except computed with Shannon
     /// entropy.
-    pub fn avg_input_bit_entropy(&self) -> f64 {
+    pub fn avg_input_bit_combo_entropy(&self) -> f64 {
         let mut avg_entropy = 0.0f64;
         for i in 0..self.avalanche_chart.len() {
             avg_entropy += self.row_entropy(i);
@@ -140,9 +160,9 @@ impl Stats {
         avg_entropy / self.avalanche_chart.len() as f64
     }
 
-    /// Same as `max_input_bit_diffusion()` except computed with Shannon
+    /// Same as `max_input_bit_combo_diffusion()` except computed with Shannon
     /// entropy.
-    pub fn max_input_bit_entropy(&self) -> f64 {
+    pub fn max_input_bit_combo_entropy(&self) -> f64 {
         let mut max_entropy = 0.0f64;
         for i in 0..self.avalanche_chart.len() {
             max_entropy = max_entropy.max(self.row_entropy(i));
@@ -211,31 +231,31 @@ impl Stats {
     #[allow(dead_code)]
     pub fn print_report(&self) {
         println!(
-            "    Bias:
+            "    Bias (lower is better):
         Min: {:0.2}
         Avg: {:0.2}
         Max: {:0.2}
-    Input Bit Diffusion:
+    Diffusion (higher is better):
         Min: {:0.1} bits
         Avg: {:0.1} bits 
         Max: {:0.1} bits
-    Input Bit Diffusion Entropy:
+    Diffusion Entropy (higher is better):
         Min: {:0.1} bits
         Avg: {:0.1} bits
         Max: {:0.1} bits
-    BIC deviation:
+    BIC deviation (lower is better):
         Min: {:0.4}
         Avg: {:0.4}
         Max: {:0.4}",
             self.min_bias(),
             self.average_bias(),
             self.max_bias(),
-            self.min_input_bit_diffusion(),
-            self.avg_input_bit_diffusion(),
-            self.max_input_bit_diffusion(),
-            self.min_input_bit_entropy(),
-            self.avg_input_bit_entropy(),
-            self.max_input_bit_entropy(),
+            self.min_input_bit_combo_diffusion(),
+            self.avg_input_bit_combo_diffusion(),
+            self.max_input_bit_combo_diffusion(),
+            self.min_input_bit_combo_entropy(),
+            self.avg_input_bit_combo_entropy(),
+            self.max_input_bit_combo_entropy(),
             self.min_bic_deviation(),
             self.avg_bic_deviation(),
             self.max_bic_deviation(),
@@ -262,6 +282,14 @@ where
     let mut chart = Stats::new();
 
     for round in 0..rounds {
+        if (round % 32) == 0 {
+            use std::io::Write;
+            print!(
+                "\r                                \rRound {} / {}",
+                round, rounds
+            );
+            let _ = std::io::stdout().flush();
+        }
         let mut input = 0usize as Bits;
         let mut output = 0usize as Bits;
 
@@ -270,7 +298,7 @@ where
         mix(&input, &mut output);
 
         // Avalanche.
-        for flip_idx in 0..DUAL_SIZE {
+        for flip_idx in 0..HIGHER_ORDER_SIZE {
             let mut input_tweaked = input;
             input_tweaked ^= bit_combinations(flip_idx + 1);
             let mut output_tweaked = 0usize as Bits;
@@ -315,6 +343,8 @@ where
 
         chart.sample_count += 1;
     }
+
+    print!("\r                                \r");
 
     chart
 }
@@ -389,20 +419,6 @@ pub fn generate_counting_rev(seed: usize, out: &mut Bits) {
     *out = (seed as Bits).reverse_bits();
 }
 
-fn binomial(n: usize, k: usize) -> usize {
-    if k > n {
-        return 0;
-    }
-
-    if k == 0 {
-        1
-    } else if k > (n / 2) {
-        binomial(n, n - k)
-    } else {
-        n * binomial(n - 1, k - 1) / k
-    }
-}
-
 /// Computes the nth bit combination, ordered by first no set bits, then all
 /// combinations of one set bit, then two set bits, and so on.
 #[allow(dead_code)]
@@ -433,13 +449,16 @@ pub fn bit_combinations(index: usize) -> u32 {
     result
 }
 
-// #[test]
-// fn yar() {
-//     println!("{} {}", binomial(32, 2), binomial(32, 1));
-//     // for i in 0..(1 << 10) {
-//     //     let mut bits = 0;
-//     //     generate_bit_combinations(i, &mut bits);
-//     //     println!("{:032b}", bits);
-//     // }
-//     panic!();
-// }
+const fn binomial(n: usize, k: usize) -> usize {
+    if k > n {
+        return 0;
+    }
+
+    if k == 0 {
+        1
+    } else if k > (n / 2) {
+        binomial(n, n - k)
+    } else {
+        n * binomial(n - 1, k - 1) / k
+    }
+}

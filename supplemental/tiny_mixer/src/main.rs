@@ -67,7 +67,7 @@ fn main() {
     );
     chart_1.print_report();
 
-    println!("\nCounting reversed:");
+    println!("\nCounting bit-reversed:");
     collision_test(20, 1 << 20, generate_counting_rev);
     let chart_2 = compute_stats(
         generate_counting_rev,
