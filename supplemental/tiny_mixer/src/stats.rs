@@ -176,7 +176,7 @@ impl Stats {
     /// For a perfect mixer, the result of flipping a given input bit should
     /// be statistically uncorrelated between any two output bits.  Or in other
     /// words, there are four possible outcomes when considering two bits: both
-    /// flip, neither flip, only the first flips, or only the second flips.  Are
+    /// flip, neither flip, only the first flips, or only the second flips.  All
     /// four outcomes should be equally likely.
     ///
     /// For each pair of output bits, this function computes the relative
