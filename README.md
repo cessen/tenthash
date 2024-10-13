@@ -7,7 +7,7 @@ A robust 160-bit non-cryptographic hash function.
 
 TentHash is a high-quality, reasonably fast, large-output hash.  Its target applications are data fingerprinting, content-addressable systems, and other use cases that don't tolerate hash collisions.
 
-Importantly, TentHash is explicitly *not* intended to stand up to attacks.  Its robustness against collisions is only meaningful under non-adversarial conditions.  In other words, like a good tent, it will protect you from the elements, but will do very little to protect you from attackers.
+Importantly, TentHash is [explicitly *not* intended to stand up to attacks](supplemental/collision/).  Its robustness against collisions is only meaningful under non-adversarial conditions.  In other words, like a good tent, it will protect you from the elements, but will do very little to protect you from attackers.
 
 Also like a good tent, it is compact (a full implementation is around 50 lines of straightforward code) and you can take it anywhere (no special hardware instructions needed).
 
