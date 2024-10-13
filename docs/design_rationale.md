@@ -311,7 +311,7 @@ Some fast hashes do indeed take this approach, and it works really well for impr
 
 However, TentHash already takes good advantage of instruction-level parallelism in its mix function, such that it's already benefiting from most of the performance gains you would get from two 128-bit lanes.  Moreover, making independent lanes too small can significantly harm hash quality.  For example, if each lane were only 64-bits wide then the full hash would have a collision probability conservatively equivalent to a 64-bit hash, regardless of how the lanes are combined at the end.  So with small lane sizes this approach isn't appropriate for a hash with TentHash's quality goals.
 
-Using two 256-bit lanes with 512-bit SIMD certainly has the potential for performance gains.  However, as mentioned in the answer to the question further up about hash state size, that also complicates the implementation and only provides marginal gains for more straightforward scalar code.
+Using two or more 256-bit lanes with wide SIMD certainly has the potential for substantial performance gains.  However, as mentioned in the answer to the question further up about hash state size, that also complicates the implementation and at best provides marginal gains for more straightforward scalar code.
 
 So given TentHash's goals, sticking to its simpler 256-bit implementation without lanes seemed the most appropriate.
 
