@@ -103,12 +103,14 @@ For example, a digest of `[10, 212, 156, ...]` would be printed as `0ad49c...`.
 Test inputs and their corresponding TentHash digests:
 
 - Empty (no input data):
-    - `68c8213b7a76b8ed267dddb3d8717bb3b6e7cc0a`,
+    - `68c8213b7a76b8ed267dddb3d8717bb3b6e7cc0a`
 - A single zero byte:
-    - `3cf6833cca9c4d5e211318577bab74bf12a4f090`,
+    - `3cf6833cca9c4d5e211318577bab74bf12a4f090`
 - The ascii string "0123456789":
-    - `a7d324bde0bf6ce3427701628f0f8fc329c2a116`,
+    - `a7d324bde0bf6ce3427701628f0f8fc329c2a116`
 - The ascii string "abcdefghijklmnopqrstuvwxyz":
-    - `f1be4be1a0f9eae6500fb2f6b64f3daa3990ac1a`,
+    - `f1be4be1a0f9eae6500fb2f6b64f3daa3990ac1a`
+- The ascii string "This string is exactly 32 bytes.":
+    - `f7c5e4763d89bddce33e97712b712d869aabcfe9`
 - The ascii string "The quick brown fox jumps over the lazy dog.":
-    - `de77f1c134228be1b5b25c941d5102f87f3e6d39`,
+    - `de77f1c134228be1b5b25c941d5102f87f3e6d39`
