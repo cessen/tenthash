@@ -1,6 +1,6 @@
 # TentHash
 
-TentHash is a non-cryptographic 160-bit hash function that prioritizes quality while also being reasonably fast and easy to implement.
+TentHash is a high-quality, non-cryptographic, 160-bit hash function.  It is also portable, easy to implement, and reasonably fast.
 
 - [TentHash Specification](docs/specification.md)
 - [Design Rationale Document](docs/design_rationale.md)

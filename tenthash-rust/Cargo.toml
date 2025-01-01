@@ -2,7 +2,7 @@
 name = "tenthash"
 version = "0.5.0"
 edition = "2021"
-description = "A robust, non-cryptographic, large-output hash function."
+description = "A high-quality, non-cryptographic, 160-bit hash function."
 categories = ["algorithms", "no-std"]
 keywords = ["hash", "digest", "checksum"]
 documentation = "https://docs.rs/tenthash"

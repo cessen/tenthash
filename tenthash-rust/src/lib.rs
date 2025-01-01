@@ -1,5 +1,5 @@
-//! TentHash, a non-cryptographic 160-bit hash function that prioritizes
-//! quality while also being reasonably fast and easy to implement.
+//! TentHash is a high-quality, non-cryptographic, 160-bit hash function.  It
+//! is also portable, easy to implement, and reasonably fast.
 //!
 //! TentHash's target applications are data fingerprinting,
 //! content-addressable systems, and other use cases that don't tolerate hash
