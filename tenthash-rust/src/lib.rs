@@ -1,16 +1,16 @@
 //! TentHash, a 160-bit *non-cryptographic* hash function.
 //!
-//! **WARNING:** TentHash's design is not yet finalized, and digest results may
-//! change before 1.0 is declared.
+//! TentHash is a high-quality, reasonably fast, *non-cryptographic*,
+//! large-output hash.  Its target applications are data fingerprinting,
+//! content-addressable systems, and other use cases that don't tolerate hash
+//! collisions.
 //!
-//! TentHash is a high-quality, reasonably fast, large-output hash.  Its target
-//! applications are data fingerprinting, checksums, content-addressable
-//! systems, and other use cases that don't tolerate hash collisions.
-//!
-//! Importantly, TentHash is explicitly *not* intended to stand up to attacks.
-//! Its robustness against collisions is only meaningful under non-adversarial
-//! conditions.  In other words, like a good tent, it will protect you from the
-//! elements, but will do very little to protect you from attackers.
+//! Importantly, TentHash is explicitly *not* intended to stand up to attacks,
+//! and should never be used where security depends on the hash function
+//! itself.  Its robustness against collisions is only meaningful under
+//! non-adversarial conditions.  In other words, like a good tent, it will
+//! protect you from the elements, but will do very little to protect you from
+//! attackers.
 //!
 //! This implementation should work on platforms of any endianness, but has only
 //! been tested on little endian platforms so far.  Running the test suite on a

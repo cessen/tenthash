@@ -1,12 +1,12 @@
 [package]
 name = "tenthash"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
-description = "A robust 160-bit non-cryptographic hash function."
+description = "A robust, non-cryptographic, large-output hash function."
 categories = ["algorithms", "no-std"]
 keywords = ["hash", "digest", "checksum"]
 documentation = "https://docs.rs/tenthash"
-repository = "https://github.com/cessen/tenthash/"
+repository = "https://github.com/cessen/tenthash/tree/main/tenthash-rust"
 readme = "README.md"
 authors = ["Nathan Vegdahl <cessen@cessen.com>"]
 license = "MIT OR Apache-2.0"

@@ -1,14 +1,13 @@
-# TentHash Specification v0.4
+# TentHash Specification
 
 This document defines the TentHash hash function.  It aims to be concise and easy to follow for anyone writing an implementation of TentHash.  It does *not* explain the rationale behind TentHash's design.  For that, please see the [Design Rationale document](design_rationale.md).
 
-**NOTE:** although it is likely that this version of the spec will become TentHash's final specification, there is still a chance it could change if issues are discovered before it is declared final.  When it is declared final, the version number will be removed, and after that point only changes that do not alter the hash output (such as clarifications and better prose) will be made.
 
 ## Overview
 
 This is the general hashing procedure:
 
-```sh
+```python
 fn do_hash(input_data):
     hash_state = [A, B, C, D]
 
