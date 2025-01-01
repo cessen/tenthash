@@ -12,9 +12,9 @@
 //! will protect you from the elements, but will do very little to protect you
 //! from attackers.
 //!
-//! This implementation should work on platforms of any endianness, but has only
-//! been tested on little endian platforms so far.  Running the test suite on a
-//! big-endian platform can verify.
+//! **Note:** this implementation should work on platforms of any endianness,
+//! but has only been tested on little endian platforms so far.  Running the
+//! test suite on a big-endian platform can verify.
 //!
 //! # Example
 //!
@@ -29,7 +29,8 @@
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
 
-/// Computes the hash of a piece of data.
+/// Computes the hash in one go, taking input data as a single contiguous
+/// slice.
 pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
     let mut state = [
         0x5d6daffc4411a967,
@@ -70,7 +71,12 @@ pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
     return digest;
 }
 
-/// A streaming hasher, for processing data in progressive chunks.
+/// A streaming hasher.  Computes the hash progressively, taking input data in
+/// chunks.
+///
+/// The hash output is unaffected by how the input data is chunked.  As long
+/// as the data is the same it can be split anywhere and the hash output will
+/// be the same.
 ///
 /// # Example
 ///
