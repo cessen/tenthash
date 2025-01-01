@@ -27,7 +27,7 @@ With all of that in mind, TentHash was designed with the following goals, in ord
 3. **Simple and portable.**  It should be easy to understand and straightforward to write conforming (and performant) implementations, without need for special hardware instructions.
 4. **Reasonably fast.**  It doesn't need to win any speed competitions, but its speed should be measured in GB/sec, not MB/sec, on typical hardware.
 
-The use cases for such a hash function are admittedly a little niche.  Typically a cryptographic hash function would be used in most of the use cases that TentHash targets.  Nevertheless, TentHash aims to fill that niche where the hash function itself does not need to be secure.
+The use cases for this are admittedly a little niche.  Typically a cryptographic hash function would be used in most of the use cases that TentHash targets.  Nevertheless, TentHash aims to fill that niche where the hash function itself does not need to be secure, but hash quality is still important and a small, portable, performant implementation is preferred or needed.
 
 
 ## Comparison with other hashes.
