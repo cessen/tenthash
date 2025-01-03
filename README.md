@@ -42,16 +42,16 @@ Data throughput was measured single-threaded on an AMD Ryzen 5 7640U.  TentHash'
 |---------------------------------------|----------------------|-----------------------------|---------------------------------------|-----------------------------|
 | TentHash                              | 160 bits[^3] | 9.0 GB/s                    | 1 block                               | Yes                         |
 | -                                     |                      |                             |                                       |                             |
-| xxHash3 (128-bit)                     | 128 bits             | 56.0 GB/s                   | Never                                 | No                          |
-| MeowHash v0.5                         | 128 bits             | 50.5 GB/s                   | ~6 blocks                             | No[^4]              |
+| xxHash3 (128-bit)                     | 128 bits             | 56.0 GB/s                   | Never[^4]                                 | No                          |
+| MeowHash v0.5                         | 128 bits             | 50.5 GB/s                   | ~6 blocks                             | No[^5]              |
 | MetroHash128                          | 128 bits             | 20.4 GB/s                   | ~22 blocks                            | No                          |
-| CityHash128 / FarmHash128[^5] | 128 bits             | 17.5 GB/s                   | ~3 blocks                             | No                          |
+| CityHash128 / FarmHash128[^6] | 128 bits             | 17.5 GB/s                   | ~3 blocks                             | No                          |
 | Murmur3 (x64 128-bit)                 | 128 bits             | 8.2 GB/s                    | ~6 blocks                             | No                          |
 | FNV-1a (128-bit)                      | 128 bits             | 0.46 GB/s                   | Never                                 | No                          |
 | -                                     |                      |                             |                                       |                             |
 | SHA2-256                              | 256 bits             | 0.3 GB/s                    | -                                     | Yes                         |
 | Blake2b                               | 256 bits             | 0.74 GB/s                   | -                                     | Yes                         |
-| Blake3 (SSE2)                         | 256 bits             | 1.9 GB/s[^6]                    | -                                     | Yes                         |
+| Blake3 (SSE2)                         | 256 bits             | 1.9 GB/s[^7]                    | -                                     | Yes                         |
 
 Aside from TentHash, none of the listed non-cryptographic hashes appear to be *conservative* about quality, pending design rationale documents that show otherwise.  Some of them *may* be fine, but it's hard to say.  
 
@@ -69,11 +69,13 @@ Not listed in the comparison table are hashes like UMASH and HalftimeHash, which
 
 [^3]: For non-cryptographic hashes, a 160-bit output is unlikely to be meaningfully better than 128-bit in most applications.  Its listing is just for completeness.  See the design rationale document for how TentHash ended up at 160 bits.
 
-[^4]: MeowHash is still a work in progress, and thus insofar as it isn't yet recommending itself for real use, lacking a design rationle document doesn't yet count against it.
+[^4]: This is a little unfair to xxHash3.  xxHash3 has an additional loop outside the block accumulation loop that further diffuses the hash state every N blocks, such that it does *eventually* diffuse the hash state to 128 bits.  Nevertheless, that further diffusion only runs every N blocks, not every block, and the per-block mixing can never diffuse to 128 bits on its own.  So this is still a potential issue.
 
-[^5]: CityHash128 and FarmHash128 are listed together because they use exactly the same construction for at least the part of the hash relevant to the diffusion metric, and also have the same data throughput.  (I *think* they're even just identical hashes, but I haven't bothered to properly confirm that.)
+[^5]: MeowHash is still a work in progress, and thus insofar as it isn't yet recommending itself for real use, lacking a design rationle document doesn't yet count against it.
 
-[^6]: This is the speed of Blake3 in SMHasher, which by default only builds it with SSE2.  The official implementation of Blake3 can reach up to 7 GB/sec, depending on build flags.  Those higher speeds are achieved via wider SIMD instructions and hand-written assembly.
+[^6]: CityHash128 and FarmHash128 are listed together because they use exactly the same construction for at least the part of the hash relevant to the diffusion metric, and also have the same data throughput.  (I *think* they're even just identical hashes, but I haven't bothered to properly confirm that.)
+
+[^7]: This is the speed of Blake3 in SMHasher, which by default only builds it with SSE2.  The official implementation of Blake3 can reach up to 7 GB/sec, depending on build flags.  Those higher speeds are achieved via wider SIMD instructions and hand-written assembly.
 
 
 ## License
@@ -95,6 +97,6 @@ The files under `docs/` are additionally released under
 Contributions are absolutely welcome!  Especially (but not limited to):
 
 * Audits of the hash design for (non-cryptographic) weaknesses.
-* Implementations of the current specification in other programming languages.
+* Implementations in other programming languages.
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this project by you will be licensed as above (MIT/Apache/CC0), without any additional terms or conditions.
