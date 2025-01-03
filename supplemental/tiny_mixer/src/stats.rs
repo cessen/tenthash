@@ -5,8 +5,8 @@ const SIZE: usize = std::mem::size_of::<Bits>() * 8;
 
 // Size needed for the higher-order avalanche test.
 //
-// This is set to measure avalanche up to order 3 (flipping all combinations of
-// up to 3 bits).  You can set `ORDER` higher to test even higher orders, but be
+// This is set to measure avalanche up to order 4 (flipping all combinations of
+// up to 4 bits).  You can set `ORDER` higher to test even higher orders, but be
 // forewarned that the time and memory requirements rapidly increase.  `ORDER =
 // 1` is a standerd avalanche test.
 const HIGHER_ORDER_SIZE: usize = {
