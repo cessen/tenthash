@@ -35,14 +35,14 @@ Digest hash(const void *in_data, uint64_t data_len) {
 
         // Copy the block into a zeroed-out buffer.  When the block is
         // smaller than 256 bits this pads it out to 256 bits with zeros.
-        uint8_t buffer[TENT_BLOCK_SIZE] = {0};
+        uint64_t buffer[TENT_BLOCK_SIZE/8] = {0};
         memcpy(buffer, data, block_size);
 
         // Incorporate the block into the hash state.
-        state[0] ^= *((uint64_t *)buffer);
-        state[1] ^= *((uint64_t *)(buffer + 8));
-        state[2] ^= *((uint64_t *)(buffer + 16));
-        state[3] ^= *((uint64_t *)(buffer + 24));
+        state[0] ^= buffer[0];
+        state[1] ^= buffer[1];
+        state[2] ^= buffer[2];
+        state[3] ^= buffer[3];
 
         mix_state(state);
 

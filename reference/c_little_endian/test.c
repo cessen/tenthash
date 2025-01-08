@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "tenthash.h"
 
-void main() {
+int main(void) {
     const static uint8_t inputs[][64] = {
         {},
         {0},
