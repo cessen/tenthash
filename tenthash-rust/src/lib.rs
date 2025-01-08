@@ -26,6 +26,8 @@
 
 #![no_std]
 
+use core::hash::{BuildHasher, Hasher};
+
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
 
@@ -211,5 +213,35 @@ fn mix_state(state: &mut [u64; 4]) {
         state[3] = state[3].rotate_left(rot_pair[1]) ^ state[1];
 
         state.swap(0, 1);
+    }
+}
+
+impl Default for TentHasher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Hasher for TentHasher {
+    fn finish(&self) -> u64 {
+        // Clone the hasher since finalize consumes self
+        let digest = self.clone().finalize();
+        // Use first 8 bytes as u64
+        u64::from_le_bytes(digest[0..8].try_into().unwrap())
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        self.update(bytes)
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct TentHashBuilder;
+
+impl BuildHasher for TentHashBuilder {
+    type Hasher = TentHasher;
+
+    fn build_hasher(&self) -> TentHasher {
+        TentHasher::new()
     }
 }

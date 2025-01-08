@@ -75,3 +75,61 @@ fn streaming_multi_chunk() {
         }
     }
 }
+
+#[test]
+fn test_hasher_trait() {
+    use core::hash::Hasher;
+
+    for (data, _) in TEST_VECTORS.iter() {
+        let mut hasher1 = TentHasher::new();
+        hasher1.write(data);
+        let hash1 = hasher1.finish();
+
+        let mut hasher2 = TentHasher::new();
+        hasher2.write(data);
+        let hash2 = hasher2.finish();
+
+        assert_eq!(hash1, hash2, "Hasher should produce consistent results");
+    }
+}
+
+#[test]
+fn test_build_hasher() {
+    use core::hash::{BuildHasher, Hasher};
+    let builder = tenthash::TentHashBuilder;
+
+    for (data, _) in TEST_VECTORS.iter() {
+        let mut hasher1 = builder.build_hasher();
+        let mut hasher2 = builder.build_hasher();
+
+        hasher1.write(data);
+        hasher2.write(data);
+
+        assert_eq!(hasher1.finish(), hasher2.finish(),
+            "BuildHasher should create consistent hashers");
+    }
+}
+
+#[test]
+fn test_hasher_write_chunks() {
+    use core::hash::Hasher;
+
+    for (data, _) in TEST_VECTORS.iter() {
+        let mut hasher1 = TentHasher::new();
+        hasher1.write(data);
+        let hash1 = hasher1.finish();
+
+        let mut hasher2 = TentHasher::new();
+        if !data.is_empty() {
+            let mid = (data.len() + 1) / 2;
+            hasher2.write(&data[..mid]);
+            hasher2.write(&data[mid..]);
+        } else {
+            hasher2.write(data);
+        }
+        let hash2 = hasher2.finish();
+
+        assert_eq!(hash1, hash2,
+            "Hash should be independent of how data is chunked");
+    }
+}
