@@ -9,11 +9,11 @@ This document focuses on how TentHash's design affects the quality of the hash, 
 
 TentHash has an intentionally non-innovative, basic design.  It borrows rather than invents where possible, and tries to stick to well-understood constructions that are easy to analyze.
 
-At a high level, TentHash is essentially a [Merkle–Damgård](https://en.wikipedia.org/wiki/Merkle%E2%80%93Damg%C3%A5rd_construction) hash with a simple xor-and-mix step as the compression function.  Importantly, unlike a cryptographic hash, TentHash's compression function is easily reversible, and therefore [engineering inputs that produce specific hashes](../supplemental/collision/src/main.rs) is straightforward.
+At a high level, TentHash is essentially a [Merkle–Damgård](https://en.wikipedia.org/wiki/Merkle%E2%80%93Damg%C3%A5rd_construction) hash, except with a simple xor-and-mix step in place of the usual one-way compression function.  Importantly, since the xor-and-mix step is easily invertible, TentHash is trivially insecure and [engineering inputs that produce specific hashes](../supplemental/collision/src/main.rs) is straightforward.
 
 However, TentHash's goal is not security, but rather is to be robust against collisions when hashing legitimate data.  "Legitimate data" in this case means any data not intentionally engineered to create hash collisions in TentHash.  It needn't be limited to uncorrupted, tamper-free, or "real" data, just as long as the tampering etc. wasn't done with the intention of creating hash collisions.
 
-The subsections below discuss TentHash's components and their contributions to this goal.
+The subsections below discuss TentHash's components and their contributions to this goal, and how they result in a hash function that can be trusted to be collision-free in non-adversarial contexts.
 
 
 ### The xor & mix loop.
