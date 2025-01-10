@@ -284,7 +284,7 @@ Having said that, I'm sure it's possible to create a hash function that is simpl
 
 TentHash's original intended output size was actually 128 bits, matching most other large-size non-cryptographic hashes.
 
-The reason for the 160-bit output is that, after optimizing the mixing function, that's the closest common output size that doesn't exceed the internal hash state's robustness against collisions (according to the most conservative metric of diffusion that was measured).  And since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
+The reason for the 160-bit output is simply that, after optimizing TentHash's rotation constants, TentHash had sufficient mixing quality to accommodate 179 bits of output, and 160 bits is the largest common output size that doesn't exceed that.  Moreover, since people can always truncate down to 128 bits if desired, there isn't much reason to *not* provide 160 bits.
 
 
 ### Q. Why the 256-bit internal state size?
