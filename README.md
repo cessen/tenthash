@@ -14,20 +14,22 @@ Also like a good tent, it is compact (a full implementation is around 50 lines o
 
 ## Why yet another hash?
 
-Very few non-cryptographic hashes have a public design justification, instead relying on empirical test suites like SMHasher to assert hash quality.  Unfortunately, such test suites are [fundamentally inadequate for asserting the quality of large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) due to the enormous state space involved, leaving the quality of those hashes in question.  **This is concerning** because the main purpose of large-output hashes is to effectively guarantee zero hash collisions, which makes hash quality critical.
+Very few non-cryptographic hashes have a public design justification, instead relying on empirical test suites like SMHasher to assert hash quality.  Unfortunately, such test suites are [fundamentally inadequate for asserting the quality of large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) due to the enormous state space involved, leaving the quality of such hashes in question.  **This is concerning** because the main purpose of large-output hashes is to effectively guarantee zero hash collisions, which makes hash quality critical.
 
-TentHash was born from frustration with this situation, and is intended to help address it.  As such, test suites like SMHasher were not used in its design process at any point.  Instead, TentHash was designed through proper analysis, and comes with a [public design justification](docs/design_rationale.md) for others to review and audit as its primary evidence of hash quality.  (TentHash also trivially passes SMHasher, if you were wondering.)
+TentHash was (among other motivations) created in response to this situation.  As such, test suites like SMHasher were not used in its design process at any point.  Instead, TentHash was designed through proper analysis, and comes with a [public design rationale](docs/design_rationale.md) that anyone can review and audit.
 
-Of course, there are considerations other than just hash quality when designing a hash function.  If quality were all that mattered, then we would just use a cryptographic hash function for everything.  Considerations like performance, ease of implementation, portability, etc. also come in to play, depending on application.
+TentHash does pass SMHasher, and should easily pass any battery of tests that aren't security related.  Nevertheless, TentHash's design rationale is the main source of its quality claims, not test suite results.
 
-With that in mind, here are TentHash's goals, in order from highest to lowest priority:
+Of course, hash quality is only one factor when considering whether to use a particular hash function.  With that in mind, here are the goals that went into TentHash's development, ordered from highest to lowest priority:
 
 1. **Robust against collisions.**  For all practical purposes, it should be safe to assume that different pieces of (non-malicious) data will never have colliding hashes.
 2. **Documented & justified design.**  Its design should be properly documented, along with the rationale justifying that design.  People shouldn't have to guess at the rationale, and they shouldn't have to wade through sprawling, obtuse source code to figure out how to write an independent implementation.
 3. **Simple and portable.**  It should be easy to understand and straightforward to write conforming (and performant) implementations, without need for special hardware instructions.
 4. **Reasonably fast.** It doesn't need to win any speed competitions, but its speed should be measured in GB/sec, not MB/sec, on typical hardware.
 
-The use cases for TentHash are admittedly a little niche, because typically a cryptographic hash function would be used for the use cases that TentHash targets.  Nevertheless, TentHash aims to fill that niche where the hash function itself does not need to be secure, but hash quality is still important and a small, portable, performant implementation is preferred or needed.
+If these priorities align well with your use case and preferences, then TentHash is likely a good choice of hash function for you.
+
+The use cases for TentHash (or any large-output non-cryptographic hash) are admittedly a little niche, because typically a cryptographic hash function would be used when a large output size is needed.  Nevertheless, TentHash aims to fill that niche where the hash function itself does not need to be secure, but hash quality is still critical and a simple, portable, performant implementation is preferred or needed.
 
 
 ## Comparison with other hashes.
