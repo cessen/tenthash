@@ -1,4 +1,4 @@
-use tenthash::TentHasher;
+use tenthash::TentHash;
 
 const TEST_VECTORS: &[(&[u8], &str)] = &[
     (&[], "68c8213b7a76b8ed267dddb3d8717bb3b6e7cc0a"),
@@ -55,7 +55,7 @@ fn single_call() {
 #[test]
 fn streaming_one_chunk() {
     for (data, digest) in TEST_VECTORS.iter().copied() {
-        let mut hasher = TentHasher::new();
+        let mut hasher = TentHash::new();
         hasher.update(data);
         assert_eq!(digest_to_string(&hasher.finalize()), digest);
     }
@@ -66,7 +66,7 @@ fn streaming_multi_chunk() {
     for chunk_size in 1..1024 {
         for (data, digest) in TEST_VECTORS.iter().copied() {
             if data.len() >= chunk_size {
-                let mut hasher = TentHasher::new();
+                let mut hasher = TentHash::new();
                 for chunk in data.chunks(chunk_size) {
                     hasher.update(chunk);
                 }

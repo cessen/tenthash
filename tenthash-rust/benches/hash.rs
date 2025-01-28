@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
-use tenthash::{hash, TentHasher};
+use tenthash::{hash, TentHash};
 
 //----
 
@@ -54,7 +54,7 @@ fn tent_hash_streaming(c: &mut Criterion) {
 
         group.bench_function(*name, |bench| {
             bench.iter(|| {
-                let mut hash = TentHasher::new();
+                let mut hash = TentHash::new();
                 for chunk in data.chunks(*chunk_size) {
                     hash.update(chunk);
                 }

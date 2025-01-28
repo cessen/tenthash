@@ -1,20 +1,16 @@
-//! TentHash is a high-quality, non-cryptographic, 160-bit hash function.  It
-//! is also portable, easy to implement, and reasonably fast.
+//! TentHash is a high-quality, non-cryptographic, 160-bit hash function.  It is
+//! also portable, easy to implement, and reasonably fast.
 //!
-//! TentHash's target applications are data fingerprinting,
-//! content-addressable systems, and other use cases that don't tolerate hash
-//! collisions.
+//! TentHash's target applications are data fingerprinting, content-addressable
+//! systems, and other use cases that don't tolerate hash collisions.
 //!
 //! Importantly, TentHash is explicitly *not* intended to stand up to attacks,
-//! and should never be used where the hash function itself has security
-//! considerations.  Its robustness against collisions is only meaningful
-//! under non-adversarial conditions.  In other words, like a good tent, it
-//! will protect you from the elements, but will do very little to protect you
-//! from attackers.
+//! and should never be used where the choice of hash function has security
+//! considerations.  Its robustness against collisions is only meaningful under
+//! non-adversarial conditions.  In other words, like a good tent, it will
+//! protect you from the elements, but will do very little to protect you from
+//! attackers.
 //!
-//! **Note:** this implementation should work on platforms of any endianness,
-//! but has only been tested on little endian platforms so far.  Running the
-//! test suite on a big-endian platform can verify.
 //!
 //! # Example
 //!
@@ -29,8 +25,15 @@
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
 
-/// Computes the hash in one go, taking input data as a single contiguous
-/// slice.
+/// Computes TentHash in one go for a contiguous slice of data.
+///
+/// # Example
+///
+/// ```rust
+/// let hash = tenthash::hash("Hello world!");
+///
+/// assert_eq!(&hash[..4], &[0x15, 0x5f, 0xa, 0x35]);
+/// ```
 pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
     let mut state = [
         0x5d6daffc4411a967,
@@ -71,43 +74,44 @@ pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
     return digest;
 }
 
-/// A streaming hasher.  Computes the hash progressively, taking input data in
-/// chunks.
+/// Computes TentHash incrementally, taking input data in chunks.
 ///
-/// The hash output is unaffected by how the input data is chunked.  As long
-/// as the data is the same it can be split anywhere and the hash output will
-/// be the same.
+/// The hash output is unaffected by how the input data is split into chunks.
+/// For example, the data can be passed a byte at a time or all at once, and the
+/// hash output will be the same.
+///
+/// However, chunk size does affect performance, with larger chunks being
+/// faster.
 ///
 /// # Example
 ///
 /// ```rust
-/// # use tenthash::TentHasher;
+/// # use tenthash::TentHash;
 /// // As one chunk.
-/// let mut hasher1 = TentHasher::new();
+/// let mut hasher1 = TentHash::new();
 /// hasher1.update("Hello world!");
 /// let hash1 = hasher1.finalize();
 ///
 /// // As multiple chunks.
-/// let mut hasher2 = TentHasher::new();
+/// let mut hasher2 = TentHash::new();
 /// hasher2.update("Hello");
 /// hasher2.update(" world!");
 /// let hash2 = hasher2.finalize();
 ///
+/// assert_eq!(&hash1[..4], &[0x15, 0x5f, 0xa, 0x35]);
 /// assert_eq!(hash1, hash2);
 /// ```
 #[derive(Debug, Copy, Clone)]
-#[repr(C)]
-#[repr(align(32))]
-pub struct TentHasher {
+pub struct TentHash {
     state: [u64; 4],       // Hash state.
     buf: [u8; BLOCK_SIZE], // Accumulates message data for processing when needed.
     buf_length: usize,     // The number of message bytes currently stored in buf[].
     message_length: u64,   // Accumulates the total message length, in bytes.
 }
 
-impl TentHasher {
-    pub fn new() -> TentHasher {
-        TentHasher {
+impl TentHash {
+    pub fn new() -> TentHash {
+        TentHash {
             state: [
                 0x5d6daffc4411a967,
                 0xe22d4dea68577f34,
@@ -122,7 +126,7 @@ impl TentHasher {
 
     /// Appends data to the data stream being hashed.
     ///
-    /// This can be called repeatedly to incrementally append more and more data.
+    /// Call this repeatedly to incrementally append more and more data.
     pub fn update(&mut self, data: impl AsRef<[u8]>) {
         let mut data = data.as_ref();
         self.message_length += data.len() as u64;
