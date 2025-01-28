@@ -14,11 +14,11 @@ Also like a good tent, it is compact (a full implementation is around 50 lines o
 
 ## Why yet another hash?
 
-Very few non-cryptographic hashes have a public design justification, instead relying on empirical test suites like SMHasher to assert hash quality.  Unfortunately, such test suites are [fundamentally inadequate for asserting the quality of large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) due to the enormous state space involved, leaving the quality of such hashes in question.  **This is concerning** because the main purpose of large-output hashes is to effectively guarantee zero hash collisions, which makes hash quality critical.
+Very few non-cryptographic hashes have a public design justification, instead relying on empirical test suites like SMHasher to assert hash quality.  Unfortunately, such test suites are [fundamentally inadequate for asserting the quality of large-output hashes](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law) due to the enormous state space involved, leaving the quality of such hashes in question.  **This is concerning** because the main purpose of large-output hashes is to effectively guarantee zero hash collisions, making hash quality critical.
 
-TentHash was (among other motivations) created in response to this situation.  As such, test suites like SMHasher were not used in its design process at any point.  Instead, TentHash was designed through proper analysis, and comes with a [public design rationale](docs/design_rationale.md) that anyone can review and audit.
+TentHash was created partly in response to this situation.  As such, test suites like SMHasher were not used in its design process at any point.  Instead, TentHash was designed through proper analysis, and comes with a [public design rationale](docs/design_rationale.md) that anyone can review and audit.
 
-TentHash does pass SMHasher, and should easily pass any battery of tests that aren't security related.  Nevertheless, TentHash's design rationale is the main source of its quality claims, not test suite results.
+TentHash does pass SMHasher, and should easily pass any battery of tests that aren't security related.  But TentHash's design rationale is the main source of its quality claims, not test suite results.
 
 Of course, hash quality is only one factor when considering whether to use a particular hash function.  With that in mind, here are the goals that went into TentHash's development, ordered from highest to lowest priority:
 
@@ -29,7 +29,7 @@ Of course, hash quality is only one factor when considering whether to use a par
 
 If these priorities align well with your use case and preferences, then TentHash is likely a good choice of hash function for you.
 
-The use cases for TentHash (or any large-output non-cryptographic hash) are admittedly a little niche, because typically a cryptographic hash function would be used when a large output size is needed.  Nevertheless, TentHash aims to fill that niche where the hash function itself does not need to be secure, but hash quality is still critical and a simple, portable, performant implementation is preferred or needed.
+However, keep in mind that it's still worth considering a cryptographic hash function over TentHash if simplicity and performance are unimportant to your use case.  TentHash aims to fill the niche where the hash function itself does not need to be secure, but a simple, portable, performant implementation is preferred or needed.
 
 
 ## Comparison with other hashes.
@@ -38,7 +38,7 @@ The table below is a comparison of TentHash to a selection of other non-cryptogr
 
 The "blocks per full diffusion" column is a partial indicator of hash quality, with 1 block being optimal and more blocks (typically) being worse.[^1]
 
-Data throughput was measured with [SMHasher3](https://gitlab.com/fwojcik/smhasher3), single-threaded on an AMD Ryzen 5 7640U.
+Data throughput was measured single-threaded on an AMD Ryzen 5 7640U with [SMHasher3](https://gitlab.com/fwojcik/smhasher3).
 
 | Name                  | Output size  | Data throughput[^2] | Blocks per full diffusion[^1] | Documented design rationale |
 |-----------------------|--------------|---------------------|-------------------------------|-----------------------------|
@@ -55,7 +55,7 @@ Data throughput was measured with [SMHasher3](https://gitlab.com/fwojcik/smhashe
 | Blake2b               | 256 bits     | 1.0 GB/s            | -                             | Yes                         |
 | Blake3 (SSE4)         | 256 bits     | 2.6 GB/s[^6]        | -                             | Yes                         |
 
-**TentHash is the only non-cryptographic hash in the list that is unambiguously conservative about quality,** and which can confidently be used in situations that don't tolerate collisions.  It's also the only non-cryptographic hash in the list that publishes a full design rationale for auditing and critique.
+**TentHash is the only non-cryptographic hash in the list that is unambiguously conservative about quality,** and which can therefore be confidently used in situations that don't tolerate collisions.  It's also the only non-cryptographic hash in the list that publishes a full design rationale for auditing and critique.
 
 In those respects, TentHash is better compared to the cryptographic hashes in the list.  TentHash is, of course, *in no way* cryptographically secure.  But for use cases where that isn't needed, TentHash compares favorably while being both faster and substantially simpler to implement and port.
 
@@ -63,7 +63,8 @@ Not listed in the comparison table are hashes like UMASH and HalftimeHash, which
 
 [^1]: "Blocks per full diffusion" means the number of input blocks that must be processed before the mixing/absorption component of the hash diffuses the hash state enough to reach the output size of the hash.</br></br>
   This is an incomplete measure of quality both in the sense that it's insufficient on its own to assert quality *and* in the sense that (due to being a simplistic measure of a single internal component) a hash can be conservative about quality without meeting the "ideal" of 1 block, depending on its design.  Additionally, this measure isn't well defined for hashes like FNV that don't process data in blocks (although in FNV's case it never fully diffuses anyway).  So the results in the table should be interpreted carefully.</br></br>
-  The testing for this measure was done via the [supplementary code](https://github.com/cessen/goodhart_hash_supplemental) from [Hash Design and Goodhart's Law](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law), in case you want to verify the work or see how it was computed for the various hashes.
+  The testing for this measure was done via the [supplementary code](https://github.com/cessen/goodhart_hash_supplemental) from [Hash Design and Goodhart's Law](https://blog.cessen.com/post/2024_07_10_hash_design_and_goodharts_law), in case you want to verify the work or see how it was computed for the various hashes.</br></br>
+  The results for the cryptographic hashes are omitted because I didn't test them, as it's safe to assume they're 1 block (or equivalent for their design).
 
 [^2]: The data throughput listed does not reflect small-input performance, because TentHash's target use case is data identification/fingerprinting rather than hash maps.  TentHash's data throughput is relatively worse on small inputs.
 
