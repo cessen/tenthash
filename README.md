@@ -29,7 +29,7 @@ Of course, hash quality is only one factor when considering whether to use a par
 
 If these priorities align well with your use case and preferences, then TentHash is likely a good choice of hash function for you.
 
-However, keep in mind that it's still worth considering a cryptographic hash function over TentHash if simplicity and performance are unimportant to your use case.  TentHash aims to fill the niche where the hash function itself does not need to be secure, but a simple, portable, performant implementation is preferred or needed.
+However, keep in mind that it's still worth considering a cryptographic hash function over TentHash if simplicity and performance are unimportant to your use case.  TentHash aims to fill the niche where the hash function itself does not need to be secure, but hash quality is still critical and a simple, portable, performant implementation is preferred or needed.
 
 
 ## Comparison with other hashes.
