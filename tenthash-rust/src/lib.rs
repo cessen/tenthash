@@ -104,7 +104,7 @@ pub fn hash(data: impl AsRef<[u8]>) -> [u8; DIGEST_SIZE] {
 #[derive(Debug, Copy, Clone)]
 pub struct TentHash {
     state: [u64; 4],       // Hash state.
-    buf: [u8; BLOCK_SIZE], // Accumulates message data for processing when needed.
+    buf: [u8; BLOCK_SIZE], // Accumulates message data for processing.
     buf_length: usize,     // The number of message bytes currently stored in buf[].
     message_length: u64,   // Accumulates the total message length, in bytes.
 }
@@ -176,14 +176,13 @@ impl TentHash {
     }
 }
 
-/// Adds message data to the hash state.
+/// Xor message data into the hash state.
 ///
-/// The data must be at least 32 bytes long.  Only the first 32 bytes
-/// are added.
+/// The data must be at least 32 bytes long, and only the first 32 bytes are
+/// used.
 #[inline(always)]
 fn xor_data_into_state(state: &mut [u64; 4], data: &[u8]) {
-    // Convert the data to native endian u64's and add to the
-    // hash state.
+    // Convert the data to native endian u64's and xor into the hash state.
     assert!(data.len() >= BLOCK_SIZE);
     state[0] ^= u64::from_le_bytes((&data[0..8]).try_into().unwrap());
     state[1] ^= u64::from_le_bytes((&data[8..16]).try_into().unwrap());
@@ -193,9 +192,8 @@ fn xor_data_into_state(state: &mut [u64; 4], data: &[u8]) {
 
 /// Mixes the passed hash state.
 ///
-/// Running this on the hash state once is enough to diffuse the bits
-/// equivalently to a full 170-bit diffusion.  Running it twice achieves
-/// full 256-bit diffusion.
+/// Running this on the hash state once results in 179 bits of diffusion.
+/// Running it twice achieves full 256-bit diffusion.
 #[inline(always)]
 fn mix_state(state: &mut [u64; 4]) {
     const ROTATIONS: &[[u32; 2]] = &[
