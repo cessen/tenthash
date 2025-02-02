@@ -2,7 +2,7 @@
 
 This document defines the TentHash hash function.  It aims to be concise and easy to follow for anyone writing an implementation of TentHash.  It does *not* explain the rationale behind TentHash's design.  For that, please see the [Design Rationale document](design_rationale.md).
 
-**This specification is final.**  Only changes that do not alter hash output (such as clarifications and better prose) are permitted.
+**This specification is final as of 2025-01-01.**  Only changes that do not alter hash output (such as clarifications and better prose) are permitted.
 
 
 ## Overview
