@@ -1,3 +1,4 @@
+use tenthash::DigestExt;
 use tenthash::TentHash;
 
 const TEST_VECTORS: &[(&[u8], &str)] = &[
@@ -73,5 +74,18 @@ fn streaming_multi_chunk() {
                 assert_eq!(digest_to_string(&hasher.finalize()), digest);
             }
         }
+    }
+}
+
+#[test]
+fn full_vs_128_digest() {
+    for (data, _) in TEST_VECTORS.iter().copied() {
+        let digest = tenthash::hash(data);
+        let hash_16_indexed = digest[0..16].try_into().unwrap();
+        let hash_16_trait = digest.to_16_bytes();
+        let hash_128_from_le_bytes = u128::from_le_bytes(hash_16_indexed);
+        let hash_128_trait = digest.to_u128();
+        assert_eq!(hash_16_indexed, hash_16_trait);
+        assert_eq!(hash_128_from_le_bytes, hash_128_trait);
     }
 }
