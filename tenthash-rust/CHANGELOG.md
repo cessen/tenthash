@@ -3,6 +3,7 @@
 
 ## [Unreleased]
 
+- Added helper trait `DigestExt`, with methods for truncating the digest to 128 bits.  Thanks to Gray Olson (@fu5ha).
 
 ## [1.0.0] - 2025-01-28
 
