@@ -21,6 +21,7 @@
 //! ```
 
 #![no_std]
+#![forbid(unsafe_code)]
 
 const DIGEST_SIZE: usize = 160 / 8; // Digest size, in bytes.
 const BLOCK_SIZE: usize = 256 / 8; // Internal block size of the hash, in bytes.
