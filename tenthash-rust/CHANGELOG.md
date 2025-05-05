@@ -1,7 +1,9 @@
 # Changelog
 
-
 ## [Unreleased]
+
+
+## [1.1.0] - 2025-05-05
 
 - Added helper trait `DigestExt`, with methods for truncating the digest to 128 bits.  Thanks to Gray Olson (@fu5ha).
 
@@ -45,7 +47,8 @@
 - Initial release, implementing the first draft of the hash design.
 
 
-[Unreleased]: https://github.com/cessen/tenthash/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/cessen/tenthash/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/cessen/tenthash/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/cessen/tenthash/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/cessen/tenthash/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/cessen/tenthash/compare/v0.3.0...v0.4.0
