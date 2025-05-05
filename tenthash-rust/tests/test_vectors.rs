@@ -79,13 +79,15 @@ fn streaming_multi_chunk() {
 
 #[test]
 fn full_vs_128_digest() {
-    for (data, _) in TEST_VECTORS.iter().copied() {
+    for (data, digest_full) in TEST_VECTORS.iter().copied() {
         let digest = tenthash::hash(data);
-        let hash_16_indexed = digest[0..16].try_into().unwrap();
-        let hash_16_trait = digest.to_16_bytes();
-        let hash_128_from_le_bytes = u128::from_le_bytes(hash_16_indexed);
-        let hash_128_trait = digest.to_u128();
-        assert_eq!(hash_16_indexed, hash_16_trait);
-        assert_eq!(hash_128_from_le_bytes, hash_128_trait);
+
+        let digest_16_bytes = digest_to_string(&digest.to_16_bytes());
+        let digest_128 = digest_to_string(&digest.to_u128().to_le_bytes());
+
+        assert_eq!(32, digest_16_bytes.len());
+        assert_eq!(32, digest_128.len());
+        assert!(digest_full.starts_with(&digest_16_bytes));
+        assert!(digest_full.starts_with(&digest_128));
     }
 }
