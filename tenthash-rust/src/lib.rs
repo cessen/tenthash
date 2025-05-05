@@ -216,28 +216,21 @@ fn mix_state(state: &mut [u64; 4]) {
     }
 }
 
-/// A helper trait we implement for the digest type, `[u8; 20]`.
+/// A helper trait with convenience methods for TentHash's output digest.
 pub trait DigestExt {
-    /// Truncate the 20-byte digest to 16 bytes.
+    /// Truncates the digest to 128 bits, returned as an array of 16 bytes.
     fn to_16_bytes(self) -> [u8; 16];
 
-    /// Truncate the 160-bit digest to the first 128 bits as a [`u128`].
+    /// Truncates the digest to 128 bits, returned as a [`u128`].
+    ///
+    /// The digest bytes are interpreted as little endian.
     fn to_u128(self) -> u128;
 }
 
 impl DigestExt for [u8; 20] {
     #[inline(always)]
     fn to_16_bytes(self) -> [u8; 16] {
-        let self_ref: &[u8; 20] = &self;
-        // SAFETY:
-        // - both are plain data types
-        // - all bytes initialized
-        // - same alignment
-        // - resulting array ref is within bounds of the source object
-        let byte_16_ref: &[u8; 16] = unsafe {
-            &*((self_ref as *const [u8; 20]).cast::<[u8; 16]>())
-        };
-        *byte_16_ref
+        (&self[0..16]).try_into().unwrap()
     }
 
     #[inline(always)]
